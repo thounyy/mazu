@@ -1,4 +1,4 @@
-/// Uniswap v2 factory like program
+#[allow(unused_const, unused_type_parameter, unused_field, unused_variable, unused_use, unused_mut_parameter, unused_function)]
 module flowxswap::factory {
     use std::string::{String};
 
@@ -56,12 +56,12 @@ module flowxswap::factory {
     /// Creates a liquidity pool of two coins X and Y.
     /// The liquidity pool of the two coins must not exist yet.
     public fun create_pair<X, Y>(container: &mut Container, ctx: &mut TxContext) {
-      abort 0
+        abort 0
     }
 
     /// Whether the liquidity pool of the two coins has been created?
     public fun pair_is_created<X, Y>(container: &Container): bool {
-       
+        abort 0
     }
 
     /// Immutable borrows the `PairMetadata` of two coins X and Y.
@@ -84,7 +84,7 @@ module flowxswap::factory {
 
     /// Immutable borrows the `Treasury` of AMM.
     public fun borrow_treasury(container: &Container): &Treasury {
-       abort 0
+        abort 0
     }
 
     /// Appoints a new treasurer to the treasury

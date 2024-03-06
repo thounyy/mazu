@@ -1,3 +1,4 @@
+#[allow(unused_const, unused_type_parameter, unused_field, unused_variable, unused_use, unused_mut_parameter, unused_function)]
 module flowxswap::treasury {
 
     friend flowxswap::factory;

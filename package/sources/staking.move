@@ -8,6 +8,8 @@ module mazu_finance::staking {
     use sui::dynamic_field as df;
     use sui::clock::{Self, Clock};
 
+    use flowxswap::pair::LP;
+
     use mazu_finance::math64;
     use mazu_finance::mazu::{Self, MAZU, Vault};
 
@@ -16,7 +18,7 @@ module mazu_finance::staking {
     const MUL: u64 = 1_000_000_000;
     const MS_IN_WEEK: u64 = 1000 * 60 * 60 * 24 * 7;
     const MAX_MAZU_POOL: u64 = 44_444_444_444_444_444; // 5% max supply
-    const MAX_LP_POOL: u64 = 222_222_222_222_222_222; // 25% max supply
+    const MAX_LP_POOL: u64 = 213_333_333_333_333_300; // 24% max supply
 
     // === Errors ===
 
@@ -26,8 +28,6 @@ module mazu_finance::staking {
     const EStakedLocked: u64 = 3;
 
     // === Structs ===
-
-    struct LP<phantom T, phantom U> has drop {} // TODO: remove
 
     struct PoolKey<phantom T> has copy, drop, store {}
 

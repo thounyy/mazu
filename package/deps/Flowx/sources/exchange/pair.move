@@ -1,4 +1,4 @@
-/// Uniswap v2 pair like program
+#[allow(unused_const, unused_type_parameter, unused_field, unused_variable, unused_use, unused_mut_parameter, unused_function)]
 module flowxswap::pair {
     use std::string::{Self, String};
     use sui::object::{Self, UID};
