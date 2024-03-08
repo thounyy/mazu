@@ -8,9 +8,6 @@ module mazu_finance::multisig {
     use sui::vec_map::{Self, VecMap};
     use sui::dynamic_field as df;
 
-    friend mazu_finance::airdrop;
-    friend mazu_finance::mazu;
-
     // === Errors ===
 
     const ENotAMember: u64 = 0;
@@ -182,7 +179,7 @@ module mazu_finance::multisig {
         proposal
     }
 
-    public(friend) fun get_request<Request: store>(proposal: Proposal): Request {
+    public fun get_request<Request: store>(proposal: Proposal): Request {
         let Proposal { id, approved: _, epoch: _ } = proposal;
         let request = df::remove(&mut id, ProposalKey {});
         object::delete(id);
@@ -196,6 +193,13 @@ module mazu_finance::multisig {
             vec_set::contains(&multisig.members, &tx_context::sender(ctx)), 
             ENotAMember
         );
+    }
+
+    // === Test functions ===
+
+    #[test_only]
+    public fun init_for_testing(ctx: &mut TxContext) {
+        init(ctx);
     }
 }
 

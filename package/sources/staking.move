@@ -1,5 +1,7 @@
 module mazu_finance::staking {
+    use std::debug::print;
     use std::vector;
+    use std::string::{Self, String};
     use sui::coin::{Self, Coin};
     use sui::sui::SUI;
     use sui::transfer;
@@ -12,6 +14,7 @@ module mazu_finance::staking {
 
     use mazu_finance::math64;
     use mazu_finance::mazu::{Self, MAZU, Vault};
+    use mazu_finance::multisig::{Self, Multisig, Proposal};
 
     // === Constants ===
 
@@ -28,6 +31,8 @@ module mazu_finance::staking {
     const EStakedLocked: u64 = 3;
 
     // === Structs ===
+
+    struct StartRequest has store {}
 
     struct PoolKey<phantom T> has copy, drop, store {}
 
@@ -106,12 +111,12 @@ module mazu_finance::staking {
         let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
         let value = coin::value(&coin) * get_boost(weeks_locked);
         
-        update_rewards(pool, staking.start, now);
+        update_rewards(pool, now);
         pool.total_staked = pool.total_staked + value;
 
         Staked<T> {
             id: object::new(ctx),
-            end: now + MS_IN_WEEK * get_boost(weeks_locked),
+            end: now + MS_IN_WEEK * weeks_locked,
             value,
             reward_index: pool.reward_index,
             coin
@@ -129,12 +134,11 @@ module mazu_finance::staking {
         let now = clock::timestamp_ms(clock);
         let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
         // update global and user indexes
-        update_rewards(pool, staking.start, now);
+        update_rewards(pool, now);
         // get rewards
-        let rewards = math64::mul_div_down(
+        let rewards = math64::mul(
             pool.reward_index - staked.reward_index, 
-            staked.value,
-            MUL,    
+            staked.value
         );
         staked.reward_index = pool.reward_index;
         pool.supply_left = pool.supply_left - rewards;
@@ -152,15 +156,15 @@ module mazu_finance::staking {
         let now = clock::timestamp_ms(clock);
         let Staked { id, end, value, reward_index, coin } = staked;
         object::delete(id);
-        assert!(end < now, EStakedLocked);
+
+        assert!(end <= now, EStakedLocked);
         let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
         // update global and user indexes
-        update_rewards(pool, staking.start, now);
+        update_rewards(pool, now);
         // get rewards
-        let rewards = math64::mul_div_down(
+        let rewards = math64::mul(
             pool.reward_index - reward_index, 
-            value,
-            MUL,    
+            value
         );
         pool.supply_left = pool.supply_left - rewards;
         pool.total_staked = pool.total_staked - coin::value(&coin);
@@ -169,47 +173,79 @@ module mazu_finance::staking {
         (coin, mazu)
     }
 
-    // === Public-Friend Functions ===
+    // === Multisig Functions ===
 
-    // === Admin Functions ===
+    // step 1: propose to start staking 
+    public fun propose_start(
+        multisig: &mut Multisig, 
+        name: String,
+        ctx: &mut TxContext
+    ) {
+        multisig::create_proposal(name, StartRequest {}, multisig, ctx);
+    }
 
-    // public(friend) fun start_staking() {}
+    // step 2: multiple members have to approve the proposal
+    // step 3: someone has to execute the proposal to get Proposal
+        
+    // step 4: unwrap the request by passing Proposal
+    public fun start_start(proposal: Proposal): StartRequest {
+        multisig::get_request(proposal)
+    }
+
+    // step 5: destroy the request and modify Staking object
+    public fun complete_start(clock: &Clock, staking: &mut Staking, request: StartRequest) {
+        let StartRequest {} = request;
+        staking.active = true;
+        let now = clock::timestamp_ms(clock);
+        staking.start = now;
+        let mazu = df::borrow_mut<PoolKey<MAZU>, Pool>(&mut staking.id, PoolKey<MAZU> {});
+        mazu.last_updated = now;
+        let lp = df::borrow_mut<PoolKey<LP<MAZU,SUI>>, Pool>(&mut staking.id, PoolKey<LP<MAZU,SUI>> {});
+        lp.last_updated = now;
+    }
 
     // === Private Functions ===
 
     fun update_rewards(
         pool: &mut Pool,
-        start: u64,
         now: u64,
     ) {
         if (pool.total_staked == 0) return;
-        let duration = now - pool.last_updated;
-
-        let total_claimable_rewards = math64::mul_div_down(
-            get_emission(pool, start, now), 
-            duration, 
-            MS_IN_WEEK
-        );
-        let claimable_reward_index = math64::mul_div_down(
-            total_claimable_rewards, 
-            MUL, 
+        let last_updated = pool.last_updated;
+        
+        let claimable_reward_index = math64::div_down(
+            get_emitted(pool, last_updated, now), 
             pool.total_staked
         );
 
-        pool.reward_index = claimable_reward_index + pool.reward_index;
+        pool.reward_index = claimable_reward_index;
         pool.last_updated = now;
     }
 
     // get mazu emission for current week 
-    fun get_emission(pool: &Pool, start: u64, now: u64): u64 {
-        let week = (now - start) / MS_IN_WEEK;
-        *vector::borrow<u64>(&pool.emissions, week)
+    fun get_emitted(pool: &Pool, last_updated: u64, now: u64): u64 {
+        let week = (now - last_updated) / MS_IN_WEEK;
+        let emitted = 0;
+        let i = 0;
+
+        while (i < week + 1) {
+            let emitted_this_week = *vector::borrow<u64>(&pool.emissions, i);
+            if (i == week) {
+                let ms_this_week = now - (week * MS_IN_WEEK);
+                emitted_this_week = math64::mul_div_down(emitted_this_week, ms_this_week, MS_IN_WEEK);
+            };
+
+            emitted = emitted + emitted_this_week;
+            i = i + 1;
+        };
+
+        emitted
     }
 
     // TODO: change impl
     // get boost multiplier for duration
     fun get_boost(weeks_locked: u64): u64 {
-        weeks_locked
+        weeks_locked + 1
     } 
 
     fun assert_active(staking: &Staking) {
@@ -376,4 +412,34 @@ module mazu_finance::staking {
     public fun init_for_testing(ctx: &mut TxContext) {
         init(ctx);
     }
+
+    #[test_only]
+    public fun assert_pool_data<T: drop>(
+        staking: &mut Staking,
+        total_staked: u64,
+        supply_left: u64,
+        reward_index: u64,
+        last_updated: u64,
+    ) {
+        let pool = df::borrow<PoolKey<T>, Pool>(&mut staking.id, PoolKey<T> {});
+        assert!(total_staked == pool.total_staked, 100);
+        assert!(supply_left == pool.supply_left, 101);
+        assert!(reward_index == pool.reward_index, 102);
+        assert!(last_updated == pool.last_updated, 103);
+    }
+
+    #[test_only]
+    public fun assert_staked_data<T: drop>(
+        staked: &Staked<T>,
+        end: u64,
+        value: u64,
+        reward_index: u64,
+        coin: u64,
+    ) {
+        assert!(end == staked.end, 105);
+        assert!(value == staked.value, 106);
+        assert!(reward_index == staked.reward_index, 107);
+        assert!(coin == coin::value(&staked.coin), 108);
+    }
 }
+
