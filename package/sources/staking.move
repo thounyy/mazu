@@ -9,6 +9,7 @@ module mazu_finance::staking {
     use sui::object::{Self, UID};
     use sui::dynamic_field as df;
     use sui::clock::{Self, Clock};
+    use sui::event;
 
     use flowxswap::pair::LP;
 
@@ -29,6 +30,16 @@ module mazu_finance::staking {
     const ECannotStakeZero: u64 = 1;
     const ENotActive: u64 = 2;
     const EStakedLocked: u64 = 3;
+    const EWrongLockingDuration: u64 = 4;
+
+    // === Events ===
+
+    struct Test has copy, drop, store {
+        index: u64,
+        reward_index: u64,
+        supply: u64,
+        rewards: u64
+    }
 
     // === Structs ===
 
@@ -111,7 +122,7 @@ module mazu_finance::staking {
         let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
         let value = coin::value(&coin) * get_boost(weeks_locked);
         
-        update_rewards(pool, now);
+        update_rewards(pool, now, staking.start);
         pool.total_staked = pool.total_staked + value;
 
         Staked<T> {
@@ -134,7 +145,7 @@ module mazu_finance::staking {
         let now = clock::timestamp_ms(clock);
         let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
         // update global and user indexes
-        update_rewards(pool, now);
+        update_rewards(pool, now, staking.start);
         // get rewards
         let rewards = math64::mul(
             pool.reward_index - staked.reward_index, 
@@ -157,16 +168,22 @@ module mazu_finance::staking {
         let Staked { id, end, value, reward_index, coin } = staked;
         object::delete(id);
 
-        assert!(end <= now, EStakedLocked);
+        assert!(
+            end <= now  || 
+            (now - staking.start) / MS_IN_WEEK >= 72, // if emissions are over 
+            EStakedLocked
+        );
+
         let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
         // update global and user indexes
-        update_rewards(pool, now);
+        update_rewards(pool, now, staking.start);
         // get rewards
         let rewards = math64::mul(
             pool.reward_index - reward_index, 
             value
         );
-        pool.supply_left = pool.supply_left - rewards;
+        
+        // pool.supply_left = pool.supply_left - rewards;
         pool.total_staked = pool.total_staked - coin::value(&coin);
         // return both staked coin and rewards
         let mazu = coin::mint(mazu::cap_mut(vault), rewards, ctx);
@@ -209,12 +226,12 @@ module mazu_finance::staking {
     fun update_rewards(
         pool: &mut Pool,
         now: u64,
+        start: u64,
     ) {
         if (pool.total_staked == 0) return;
-        let last_updated = pool.last_updated;
         
         let claimable_reward_index = math64::div_down(
-            get_emitted(pool, last_updated, now), 
+            get_emitted(pool, start, now), 
             pool.total_staked
         );
 
@@ -223,29 +240,32 @@ module mazu_finance::staking {
     }
 
     // get mazu emission for current week 
-    fun get_emitted(pool: &Pool, last_updated: u64, now: u64): u64 {
-        let week = (now - last_updated) / MS_IN_WEEK;
+    fun get_emitted(pool: &Pool, start: u64, now: u64): u64 {
+        let week = (now - start) / MS_IN_WEEK;
         let emitted = 0;
         let i = 0;
 
         while (i < week + 1) {
             let emitted_this_week = *vector::borrow<u64>(&pool.emissions, i);
             if (i == week) {
-                let ms_this_week = now - (week * MS_IN_WEEK);
+                let ms_this_week = now - start - (week * MS_IN_WEEK);
                 emitted_this_week = math64::mul_div_down(emitted_this_week, ms_this_week, MS_IN_WEEK);
             };
 
             emitted = emitted + emitted_this_week;
             i = i + 1;
         };
-
         emitted
     }
 
-    // TODO: change impl
     // get boost multiplier for duration
-    fun get_boost(weeks_locked: u64): u64 {
-        weeks_locked + 1
+    // fun get_boost(days: u64): u64 {
+    //     // should be more than 1 month and less than 5
+    //     assert!(days >= 30 && days < 153, EWrongLockingDuration);
+    //     math64::mul_div_down(days, MUL, 30)
+    // } 
+    fun get_boost(days: u64): u64 {
+        days + 1
     } 
 
     fun assert_active(staking: &Staking) {
