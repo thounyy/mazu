@@ -12,6 +12,7 @@
     "stake": "bun ./src/stake.ts",
     "claim": "bun ./src/claim.ts",
     "unstake": "bun ./src/unstake.ts",
+    "send": "bun ./src/send.ts",
     "start": "bun ./src/start.ts"
   },
   "dependencies": {

@@ -11,7 +11,8 @@ module mazu_finance::multisig {
     // === Errors ===
 
     const ENotAMember: u64 = 0;
-    const EThresholdNotReached: u64 = 1;
+    const EThresholdTooHigh: u64 = 1;
+    const EThresholdNotReached: u64 = 2;
 
     // === Structs ===
 
@@ -81,9 +82,15 @@ module mazu_finance::multisig {
         name: String,
         is_add: bool, // is it to add or remove members
         threshold: u64,
-        addresses: vector<address>,
+        addresses: vector<address>, // addresses to add or remove
         ctx: &mut TxContext
     ) {
+        let new_addr_len = if (is_add) {
+            vector::length(&addresses) + vec_set::size(&multisig.members)
+        } else {
+            vec_set::size(&multisig.members) - vector::length(&addresses)
+        };
+        assert!(new_addr_len >= threshold, EThresholdTooHigh);
         let request = ModifyMultisigRequest { is_add, threshold, addresses };
         create_proposal(name, request, multisig, ctx);
     }
@@ -97,7 +104,7 @@ module mazu_finance::multisig {
     }
     
     // step 5: destroy the request and modify Multisig object
-    public fun complete_transfer(
+    public fun complete_modify_multisig(
         multisig: &mut Multisig,
         request: ModifyMultisigRequest,
     ) {

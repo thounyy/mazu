@@ -1,9 +1,9 @@
 module mazu_finance::airdrop {
+    use std::string::String;
     use sui::object::{Self, UID};
     use sui::coin::{Self, Coin};
     use sui::tx_context::TxContext;
     use sui::transfer;
-    use std::string::String;
 
     use mazu_finance::mazu::{Self, MAZU, Vault};
     use mazu_finance::multisig::{Self, Multisig, Proposal};
@@ -12,7 +12,7 @@ module mazu_finance::airdrop {
 
     const ENoMoreCoinsToAirdrop: u64 = 0;
 
-    struct Request has store { amount: u64 }
+    struct Request has store {}
 
     struct Ticket has key, store { 
         id: UID,
@@ -36,17 +36,17 @@ module mazu_finance::airdrop {
     // === Public functions ===
 
     public fun claim(
-        airdrop_list: Ticket, 
+        ticket: Ticket, 
         airdrop: &mut Airdrop,
-        manager: &mut Vault, 
+        vault: &mut Vault, 
         ctx: &mut TxContext
     ): Coin<MAZU> {
-        let Ticket { id, amount } = airdrop_list;
+        let Ticket { id, amount } = ticket;
         object::delete(id);
 
         airdrop.remaining = airdrop.remaining - amount;
 
-        coin::mint(mazu::cap_mut(manager), amount, ctx)
+        coin::mint(mazu::cap_mut(vault), amount, ctx)
     }
 
     // === Multisig functions === 
@@ -54,11 +54,10 @@ module mazu_finance::airdrop {
     // step 1: propose an airdrop
     public fun propose(
         multisig: &mut Multisig, 
-        name: String, 
-        amount: u64, 
+        name: String,
         ctx: &mut TxContext
     ) {
-        let request = Request { amount: amount };
+        let request = Request {};
         multisig::create_proposal(name, request, multisig, ctx);
     }
 
@@ -71,8 +70,7 @@ module mazu_finance::airdrop {
     }
 
     // step 5: create (and send via PTB) as many airdroplist as needed (according to max)
-    public fun new(request: &Request, airdrop: &mut Airdrop, ctx: &mut TxContext): Ticket {
-        let amount = request.amount;
+    public fun new(_: &Request, airdrop: &mut Airdrop, amount: u64, ctx: &mut TxContext): Ticket {
         assert!(airdrop.max_supply + amount >= 0, ENoMoreCoinsToAirdrop);
         airdrop.max_supply = airdrop.max_supply - amount;
 
@@ -81,7 +79,7 @@ module mazu_finance::airdrop {
 
     // step 6: destroy the request
     public fun complete(request: Request) {
-        let Request { amount: _ } = request;
+        let Request {} = request;
     }
 }
 

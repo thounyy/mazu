@@ -148,11 +148,11 @@ module mazu_finance::staking {
         update_rewards(pool, now, staking.start);
         // get rewards
         let rewards = math64::mul(
-            pool.reward_index - staked.reward_index, 
+            sub(pool.reward_index, staked.reward_index), 
             staked.value
         );
         staked.reward_index = pool.reward_index;
-        pool.supply_left = pool.supply_left - rewards;
+        pool.supply_left = sub(pool.supply_left, rewards);
         coin::mint(mazu::cap_mut(vault), rewards, ctx)
     }
 
@@ -179,12 +179,12 @@ module mazu_finance::staking {
         update_rewards(pool, now, staking.start);
         // get rewards
         let rewards = math64::mul(
-            pool.reward_index - reward_index, 
+            sub(pool.reward_index, reward_index), 
             value
         );
         
         // pool.supply_left = pool.supply_left - rewards;
-        pool.total_staked = pool.total_staked - coin::value(&coin);
+        pool.total_staked = sub(pool.total_staked, coin::value(&coin));
         // return both staked coin and rewards
         let mazu = coin::mint(mazu::cap_mut(vault), rewards, ctx);
         (coin, mazu)
@@ -270,6 +270,10 @@ module mazu_finance::staking {
 
     fun assert_active(staking: &Staking) {
         assert!(staking.active, ENotActive);
+    }
+    
+    fun sub(x: u64, y: u64): u64 {
+        if (x > y) x - y else 0
     }
 
     fun init_mazu_emissions(): vector<u64> {

@@ -12,6 +12,7 @@ module mazu_finance::mazu {
 
     friend mazu_finance::airdrop;
     friend mazu_finance::staking;
+    friend mazu_finance::vesting;
 
     // === Constants ===
 
@@ -27,7 +28,8 @@ module mazu_finance::mazu {
     // === Errors ===
 
     const EUnknownStakeholder: u64 = 0;
-    const ENotEnoughFundsUnlocked: u64 = 1;
+    const EStakeholderNotInVault: u64 = 1;
+    const ENotEnoughFundsUnlocked: u64 = 2;
 
     // === Structs ===
 
@@ -72,7 +74,7 @@ module mazu_finance::mazu {
             ctx
         );
 
-        coin::mint_and_transfer(&mut cap, 100, tx_context::sender(ctx), ctx);
+        coin::mint_and_transfer(&mut cap, 100000000000000, tx_context::sender(ctx), ctx);
 
         transfer::public_share_object(metadata);
         
@@ -92,10 +94,10 @@ module mazu_finance::mazu {
     // === Public functions ===
 
     public fun burn(
-        manager: &mut Vault, 
+        vault: &mut Vault, 
         coin: Coin<MAZU>
     ) {
-        coin::burn(&mut manager.cap, coin);
+        coin::burn(&mut vault.cap, coin);
     }
 
     // === Multisig functions ===
@@ -109,7 +111,7 @@ module mazu_finance::mazu {
         recipient: address,
         ctx: &mut TxContext
     ) {
-        assert_is_stakeholder(stakeholder);
+        assert_in_vault(stakeholder);
         let request = TransferRequest { stakeholder, amount, recipient };
         multisig::create_proposal(name, request, multisig, ctx);
     }
@@ -139,6 +141,7 @@ module mazu_finance::mazu {
     // step 1: propose to update coin metadata
     public fun propose_update_metadata(
         multisig: &mut Multisig, 
+        proposal_name: String,
         name: String, 
         symbol: String, 
         description: String, 
@@ -146,7 +149,7 @@ module mazu_finance::mazu {
         ctx: &mut TxContext
     ) {
         let request = UpdateMetadataRequest { name, symbol, description, icon_url };
-        multisig::create_proposal(name, request, multisig, ctx);
+        multisig::create_proposal(proposal_name, request, multisig, ctx);
     }
 
     // step 2: multiple members have to approve the proposal
@@ -159,16 +162,16 @@ module mazu_finance::mazu {
 
     // step 5: destroy the request
     public fun complete_update_metadata(
-        manager: &Vault, 
+        vault: &Vault, 
         metadata: &mut CoinMetadata<MAZU>, 
         request: UpdateMetadataRequest
     ) {
         let UpdateMetadataRequest { name, symbol, description, icon_url } = request;
 
-        coin::update_name(&manager.cap, metadata, name);
-        coin::update_symbol(&manager.cap, metadata, string::to_ascii(symbol));
-        coin::update_description(&manager.cap, metadata, description);
-        coin::update_icon_url(&manager.cap, metadata, string::to_ascii(icon_url));
+        coin::update_name(&vault.cap, metadata, name);
+        coin::update_symbol(&vault.cap, metadata, string::to_ascii(symbol));
+        coin::update_description(&vault.cap, metadata, description);
+        coin::update_icon_url(&vault.cap, metadata, string::to_ascii(icon_url));
     }
 
     // === Friend functions ===    
@@ -177,9 +180,7 @@ module mazu_finance::mazu {
         &mut vault.cap
     }
 
-    // === Private functions ===
-
-    fun handle_stakeholder(
+    public(friend) fun handle_stakeholder(
         vault: &mut Vault, 
         stakeholder: String, 
         amount: u64, 
@@ -196,10 +197,12 @@ module mazu_finance::mazu {
 
         if (stakeholder == string::utf8(b"community")) {
             vault.community = vault.community - amount;
-        // } else if (stakeholder == string::utf8(b"team")) {
+        } else if (stakeholder == string::utf8(b"team")) {
+            vault.team = vault.team - amount;
         } else if (stakeholder == string::utf8(b"strategy")) {
             vault.strategy = vault.strategy - amount;
-        // } else if (stakeholder == string::utf8(b"private_sale")) {
+        } else if (stakeholder == string::utf8(b"private_sale")) {
+            vault.private_sale = vault.private_sale - amount;
         } else if (stakeholder == string::utf8(b"public_sale")) {
             vault.public_sale = vault.public_sale - amount;
         } else if (stakeholder == string::utf8(b"marketing")) {
@@ -210,24 +213,29 @@ module mazu_finance::mazu {
     }
 
     // returns (amount TGE, amount vesting, period vesting)
-    fun vesting_for_stakeholder(stakeholder: String): (u64, u64, u64) {
+    public(friend) fun vesting_for_stakeholder(stakeholder: String): (u64, u64, u64) {
         let (tge, vesting, period) = (0, 0, 0);
 
         if (stakeholder == string::utf8(b"community")) {
             tge = math64::div_down(MAX_COMMUNITY_INCENTIVES, 10);
-            vesting = math64::mul_div_down(MAX_COMMUNITY_INCENTIVES, 9, 10);
+            vesting = tge - MAX_COMMUNITY_INCENTIVES;
             period = 548;
-        // } else if (stakeholder == string::utf8(b"team")) {
+        } else if (stakeholder == string::utf8(b"team")) {
+            tge = MAX_TEAM;
+            // vesting managed in vesting module
         } else if (stakeholder == string::utf8(b"strategy")) {
             tge = math64::div_down(MAX_STRATEGY, 2);
-            vesting = math64::div_down(MAX_STRATEGY, 2);
+            vesting = tge;
             period = 548;
-        // } else if (stakeholder == string::utf8(b"private_sale")) {
+        } else if (stakeholder == string::utf8(b"private_sale")) {
+            tge = MAX_PRIVATE_SALE;
+            // vesting managed in vesting module
         } else if (stakeholder == string::utf8(b"public_sale")) {
-            tge = MAX_PUBLIC_SALE; // vesting and period = 0
+            tge = MAX_PUBLIC_SALE; 
+            // vesting and period = 0
         } else if (stakeholder == string::utf8(b"marketing")) {
             tge = math64::div_down(MAX_MARKETING, 4);
-            vesting = math64::mul_div_down(MAX_MARKETING, 3, 4);
+            vesting = tge - MAX_MARKETING;
             period = 548;
         } else {
             abort EUnknownStakeholder
@@ -236,7 +244,9 @@ module mazu_finance::mazu {
         (tge, vesting, period)
     }
 
-    fun assert_is_stakeholder(name: String) {
+    // === Private functions ===
+
+    fun assert_in_vault(name: String) {
         assert!(
             name == string::utf8(b"community") ||
             // name == string::utf8(b"team") ||
@@ -244,7 +254,7 @@ module mazu_finance::mazu {
             // name == string::utf8(b"private_sale") ||
             name == string::utf8(b"public_sale") ||
             name == string::utf8(b"marketing"),
-            EUnknownStakeholder
+            EStakeholderNotInVault
         )
     }
 
