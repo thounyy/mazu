@@ -248,9 +248,7 @@ module mazu_finance::staking {
             get_emitted(pool, start, now), 
             pool.total_staked
         );
-        // print(&claimable_reward_index);
-        // print(&pool.reward_index);
-
+        
         pool.reward_index = claimable_reward_index + pool.reward_index;
         pool.last_updated = now;
     }
@@ -280,6 +278,7 @@ module mazu_finance::staking {
             };
             i = i + 1;
         };
+        
         emitted
     }
 
@@ -460,6 +459,13 @@ module mazu_finance::staking {
     #[test_only]
     public fun init_for_testing(ctx: &mut TxContext) {
         init(ctx);
+    }
+
+    #[test_only]
+    public fun print_pool_data<T: drop>(staking: &mut Staking): (u64, u64, u64, u64) {
+        let pool = df::borrow<PoolKey<T>, Pool>(&mut staking.id, PoolKey<T> {});
+        
+        (pool.total_staked, pool.supply_left, pool.reward_index, pool.last_updated)
     }
 
     #[test_only]

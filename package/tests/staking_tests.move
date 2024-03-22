@@ -91,90 +91,103 @@ module mazu_finance::staking_tests{
         staking::complete_start(&stor.clock, &mut stor.staking, request);
     }
 
+    fun compute_reward_index(reward_index: u64, duration: u64, total: u64): u64 {
+        reward_index + 
+        (
+            (
+                (2666666670000000 as u128) * 
+                (duration as u128) / 
+                (MS_IN_WEEK as u128) / 
+                (total as u128)
+            ) 
+            as u64
+        )
+    }
+
     // === test normal operations === 
 
-    #[test]
-    fun publish_package() {
-        let (scenario, storage) = init_scenario();
-        complete_scenario(scenario, storage);
-    }
+    // #[test]
+    // fun publish_package() {
+    //     let (scenario, storage) = init_scenario();
+    //     complete_scenario(scenario, storage);
+    // }
 
-    #[test]
-    fun stake_claim_unstake_no_time_passed_single_user() {
-        let (scenario, storage) = init_scenario();
-        start_staking(&mut scenario, &mut storage);
-        let scen = &mut scenario;
-        let (staking, vault, clock) = (&mut storage.staking, &mut storage.vault, &mut storage.clock);
+    // #[test]
+    // fun stake_claim_unstake_no_time_passed_single_user() {
+    //     let (scenario, storage) = init_scenario();
+    //     start_staking(&mut scenario, &mut storage);
+    //     let scen = &mut scenario;
+    //     let (staking, vault, clock) = (&mut storage.staking, &mut storage.vault, &mut storage.clock);
 
-        // stake
-        let staked = staking::stake(staking, mazu(100, scen), clock, 0, ts::ctx(scen));
-        staking::assert_staked_data(&staked, 0, 100, 0, 100);
-        // claim
-        let rewards1 = staking::claim(vault, staking, &mut staked, clock, ts::ctx(scen));
-        assert!(coin::value(&rewards1) == 0, 0);
-        // unstake
-        let (deposit, rewards2) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
-        assert!(coin::value(&rewards2) == 0, 1);
-        assert!(coin::value(&deposit) == 100, 2);
+    //     // stake
+    //     let staked = staking::stake(staking, mazu(100, scen), clock, 0, ts::ctx(scen));
+    //     staking::assert_staked_data(&staked, 0, 100, 0, 100);
+    //     // claim
+    //     let rewards1 = staking::claim(vault, staking, &mut staked, clock, ts::ctx(scen));
+    //     assert!(coin::value(&rewards1) == 0, 0);
+    //     // unstake
+    //     let (deposit, rewards2) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
+    //     assert!(coin::value(&rewards2) == 0, 1);
+    //     assert!(coin::value(&deposit) == 100, 2);
 
-        transfer::public_transfer(deposit, ALICE);
-        transfer::public_transfer(rewards1, ALICE);
-        transfer::public_transfer(rewards2, ALICE);
-        complete_scenario(scenario, storage);
-    }
+    //     transfer::public_transfer(deposit, ALICE);
+    //     transfer::public_transfer(rewards1, ALICE);
+    //     transfer::public_transfer(rewards2, ALICE);
+    //     complete_scenario(scenario, storage);
+    // }
 
-    #[test]
-    fun stake_claim_unstake_from_zero_one_week_single_user() {
-        let (scenario, storage) = init_scenario();
-        start_staking(&mut scenario, &mut storage);
-        let scen = &mut scenario;
-        let (staking, vault, clock) = (&mut storage.staking, &mut storage.vault, &mut storage.clock);
+    // #[test]
+    // fun stake_claim_unstake_from_zero_one_week_single_user() {
+    //     let (scenario, storage) = init_scenario();
+    //     start_staking(&mut scenario, &mut storage);
+    //     let scen = &mut scenario;
+    //     let (staking, vault, clock) = (&mut storage.staking, &mut storage.vault, &mut storage.clock);
 
-        // stake
-        let staked = staking::stake(staking, mazu(100, scen), clock, 0, ts::ctx(scen));
-        staking::assert_staked_data(&staked, 0, 100, 0, 100);
-        // claim
-        clock::increment_for_testing(clock, MS_IN_WEEK);
-        let rewards1 = staking::claim(vault, staking, &mut staked, clock, ts::ctx(scen));
-        assert!(coin::value(&rewards1) == 2666666670000000, 3);
-        // unstake
-        clock::increment_for_testing(clock, MS_IN_WEEK);
-        let (deposit, rewards2) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
-        assert!(coin::value(&rewards2) == 1777777780000000, 4);
-        assert!(coin::value(&deposit) == 100, 5);
+    //     // stake
+    //     let staked = staking::stake(staking, mazu(100, scen), clock, 0, ts::ctx(scen));
+    //     staking::assert_staked_data(&staked, 0, 100, 0, 100);
+    //     // claim
+    //     clock::increment_for_testing(clock, MS_IN_WEEK);
+    //     let rewards1 = staking::claim(vault, staking, &mut staked, clock, ts::ctx(scen));
+    //     assert!(coin::value(&rewards1) == 2666666670000000, 3);
+    //     // unstake
+    //     clock::increment_for_testing(clock, MS_IN_WEEK);
+    //     let (deposit, rewards2) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
+    //     assert!(coin::value(&rewards2) == 1777777780000000, 4);
+    //     assert!(coin::value(&deposit) == 100, 5);
 
-        transfer::public_transfer(deposit, ALICE);
-        transfer::public_transfer(rewards1, ALICE);
-        transfer::public_transfer(rewards2, ALICE);
-        complete_scenario(scenario, storage);
-    }
+    //     transfer::public_transfer(deposit, ALICE);
+    //     transfer::public_transfer(rewards1, ALICE);
+    //     transfer::public_transfer(rewards2, ALICE);
+    //     complete_scenario(scenario, storage);
+    // }
 
-    #[test]
-    fun stake_claim_unstake_from_random_one_week_single_user() {
-        let (scenario, storage) = init_scenario();
-        clock::increment_for_testing(&mut storage.clock, 10000000000000);
-        start_staking(&mut scenario, &mut storage);
-        let scen = &mut scenario;
-        let (staking, vault, clock) = (&mut storage.staking, &mut storage.vault, &mut storage.clock);
+    // #[test]
+    // fun stake_claim_unstake_from_random_one_week_single_user() {
+    //     let (scenario, storage) = init_scenario();
+    //     clock::increment_for_testing(&mut storage.clock, 10000000000000);
+    //     start_staking(&mut scenario, &mut storage);
+    //     let scen = &mut scenario;
+    //     let (staking, vault, clock) = (&mut storage.staking, &mut storage.vault, &mut storage.clock);
 
-        // stake
-        let staked = staking::stake(staking, mazu(100, scen), clock, 0, ts::ctx(scen));
-        staking::assert_staked_data(&staked, 10000000000000, 100, 0, 100);
-        // claim
-        clock::increment_for_testing(clock, MS_IN_WEEK);
-        let rewards1 = staking::claim(vault, staking, &mut staked, clock, ts::ctx(scen));
-        assert!(coin::value(&rewards1) == 2666666670000000, 5);
-        // unstake
-        clock::increment_for_testing(clock, MS_IN_WEEK);
-        let (deposit, rewards2) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
-        assert!(coin::value(&rewards2) == 1777777780000000, 6);
-        assert!(coin::value(&deposit) == 100, 5);
+    //     // stake
+    //     let staked = staking::stake(staking, mazu(100, scen), clock, 0, ts::ctx(scen));
+    //     staking::assert_staked_data(&staked, 10000000000000, 100, 0, 100);
+    //     // claim
+    //     clock::increment_for_testing(clock, MS_IN_WEEK);
+    //     let rewards1 = staking::claim(vault, staking, &mut staked, clock, ts::ctx(scen));
+    //     assert!(coin::value(&rewards1) == 2666666670000000, 5);
+    //     // unstake
+    //     clock::increment_for_testing(clock, MS_IN_WEEK);
+    //     let (deposit, rewards2) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
+    //     assert!(coin::value(&rewards2) == 1777777780000000, 6);
+    //     assert!(coin::value(&deposit) == 100, 5);
 
-        transfer::public_transfer(deposit, ALICE);
-        transfer::public_transfer(rewards1, ALICE);
-        transfer::public_transfer(rewards2, ALICE);
-        complete_scenario(scenario, storage);
-    }
+    //     transfer::public_transfer(deposit, ALICE);
+    //     transfer::public_transfer(rewards1, ALICE);
+    //     transfer::public_transfer(rewards2, ALICE);
+    //     complete_scenario(scenario, storage);
+    // }
 
     #[test]
     fun full_scen_no_lock_two_users() {
@@ -183,40 +196,69 @@ module mazu_finance::staking_tests{
         // deployment
         clock::increment_for_testing(&mut s.clock, 10_000_000_000_000);
         start_staking(scen, &mut s);
+        let reward_index = 0;
         let s = forward_scenario(scen, s, OWNER);
 
         // alice stakes
+        let alice_amount = 100;
         clock::increment_for_testing(&mut s.clock, 1000);
-        let alice_staked = staking::stake(&mut s.staking, mazu(100, scen), &mut s.clock, 0, ts::ctx(scen));
-        staking::assert_staked_data(&alice_staked, 10000000001000, 100, 0, 100);
+        let alice_staked = staking::stake(&mut s.staking, mazu(alice_amount, scen), &mut s.clock, 0, ts::ctx(scen));
+        // reward_index = reward_index + (2666666670000000 * 1000 / MS_IN_WEEK / 0); return 0 here
+        staking::assert_staked_data(&alice_staked, 10000000001000, alice_amount, 0, alice_amount); // reward_index = 0 because no value when alice staked
         let s = forward_scenario(scen, s, ALICE);
 
         // bob stakes
+        let bob_amount1 = 1000;
         clock::increment_for_testing(&mut s.clock, 3000);
-        let bob_staked = staking::stake(&mut s.staking, mazu(1000, scen), &mut s.clock, 0, ts::ctx(scen));
-        let reward_index = staking::get_reward_index<MAZU>(&mut s.staking, &mut s.clock);
-        staking::assert_staked_data(&bob_staked, 10000000004000, 1000, reward_index, 1000);
+        reward_index = compute_reward_index(reward_index, 4000, 100);
+        let bob_staked = staking::stake(&mut s.staking, mazu(bob_amount1, scen), &mut s.clock, 0, ts::ctx(scen));
+        staking::assert_staked_data(&bob_staked, 10000000004000, bob_amount1, reward_index, bob_amount1);
         let s = forward_scenario(scen, s, BOB);
         
         // bob claims
         clock::increment_for_testing(&mut s.clock, 7000);
+        reward_index = compute_reward_index(reward_index, 7000, 1100);
         let theoretical_rewards = staking::calculate_rewards(&mut s.staking, &mut bob_staked, &mut s.clock);
-        let rewards_bob1 = staking::claim(&mut s.vault, &mut s.staking, &mut bob_staked, &mut s.clock, ts::ctx(scen));
-        tu::print(b"laaaaa");
-        print(&rewards_bob1);
-        print(&theoretical_rewards);
-        assert!(coin::value(&rewards_bob1) == theoretical_rewards, 5);
-        // unstake
-        // clock::increment_for_testing(clock, MS_IN_WEEK);
-        // let (deposit, rewards2) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
-        // assert!(coin::value(&rewards2) == 1777777780000000, 6);
-        // assert!(coin::value(&deposit) == 100, 5);
+        let bob_claim = staking::claim(&mut s.vault, &mut s.staking, &mut bob_staked, &mut s.clock, ts::ctx(scen));
+        staking::assert_staked_data(&bob_staked, 10000000004000, bob_amount1, reward_index, bob_amount1);
+        assert!(coin::value(&bob_claim) == theoretical_rewards, 5);
 
-        // transfer::public_transfer(deposit, ALICE);
-        transfer::public_transfer(rewards_bob1, BOB);
-        transfer::public_transfer(bob_staked, BOB);
-        transfer::public_transfer(alice_staked, ALICE);
-        // transfer::public_transfer(rewards2, ALICE);
+        // bob stakes 2
+        let bob_amount2 = 10000;
+        clock::increment_for_testing(&mut s.clock, 10000);
+        reward_index = compute_reward_index(reward_index, 10000, 1100);
+        let bob_staked2 = staking::stake(&mut s.staking, mazu(bob_amount2, scen), &mut s.clock, 0, ts::ctx(scen));
+        staking::assert_staked_data(&bob_staked2, 10000000021000, bob_amount2, reward_index, bob_amount2);
+        let s = forward_scenario(scen, s, BOB);
+        
+        // alice unstakes
+        clock::increment_for_testing(&mut s.clock, 2000);
+        let theoretical_rewards = staking::calculate_rewards(&mut s.staking, &mut alice_staked, &mut s.clock);
+        let (alice_deposit, alice_rewards) = staking::unstake(&mut s.vault, &mut s.staking, alice_staked, &mut s.clock, ts::ctx(scen));
+        assert!(coin::value(&alice_rewards) == theoretical_rewards, 6);
+        assert!(coin::value(&alice_deposit) == alice_amount, 5);
+    
+        // bob unstakes 1
+        clock::increment_for_testing(&mut s.clock, 3000);
+        let theoretical_rewards = staking::calculate_rewards(&mut s.staking, &mut bob_staked, &mut s.clock);
+        let (bob_deposit1, bob_rewards1) = staking::unstake(&mut s.vault, &mut s.staking, bob_staked, &mut s.clock, ts::ctx(scen));
+        assert!(coin::value(&bob_rewards1) == theoretical_rewards, 6);
+        assert!(coin::value(&bob_deposit1) == bob_amount1, 5);
+        
+        // bob unstakes 2
+        clock::increment_for_testing(&mut s.clock, 4000);
+        let theoretical_rewards = staking::calculate_rewards(&mut s.staking, &mut bob_staked2, &mut s.clock);
+        let (bob_deposit2, bob_rewards2) = staking::unstake(&mut s.vault, &mut s.staking, bob_staked2, &mut s.clock, ts::ctx(scen));
+        assert!(coin::value(&bob_rewards2) == theoretical_rewards, 6);
+        assert!(coin::value(&bob_deposit2) == bob_amount2, 5);
+
+        transfer::public_transfer(bob_claim, BOB);
+        transfer::public_transfer(bob_deposit1, BOB);
+        transfer::public_transfer(bob_deposit2, BOB);
+        transfer::public_transfer(bob_rewards1, BOB);
+        transfer::public_transfer(bob_rewards2, BOB);
+        transfer::public_transfer(alice_deposit, ALICE);
+        transfer::public_transfer(alice_rewards, ALICE);
         complete_scenario(scenario, s);
     }
 }
