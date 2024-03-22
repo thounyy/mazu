@@ -190,6 +190,20 @@ module mazu_finance::staking {
         (coin, mazu)
     }
 
+    public fun calculate_rewards<T: drop>(
+        staking: &mut Staking, 
+        staked: &mut Staked<T>, 
+        clock: &Clock,
+    ): u64 {
+        let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
+        update_rewards(pool, clock::timestamp_ms(clock), staking.start);
+        let rewards = math64::mul(
+            sub(pool.reward_index, staked.reward_index), 
+            staked.value
+        );
+        rewards
+    }
+
     // === Multisig Functions ===
 
     // step 1: propose to start staking 
@@ -235,21 +249,28 @@ module mazu_finance::staking {
             pool.total_staked
         );
 
-        pool.reward_index = claimable_reward_index;
+        pool.reward_index = claimable_reward_index + pool.reward_index;
         pool.last_updated = now;
     }
 
     // get mazu emission for current week 
     fun get_emitted(pool: &Pool, start: u64, now: u64): u64 {
-        let week = (now - start) / MS_IN_WEEK;
+        let last_week = (pool.last_updated - start) / MS_IN_WEEK;
+        let current_week = (now - start) / MS_IN_WEEK;
         let emitted = 0;
-        let i = 0;
+        let i = last_week;
 
-        while (i < week + 1) {
-            let emitted_this_week = *vector::borrow<u64>(&pool.emissions, i);
-            if (i == week) {
-                let ms_this_week = now - start - (week * MS_IN_WEEK);
-                emitted_this_week = math64::mul_div_down(emitted_this_week, ms_this_week, MS_IN_WEEK);
+        while (i < current_week + 1) {
+            let emitted_this_week = emitted + *vector::borrow<u64>(&pool.emissions, i);
+            // add everything emitted since start
+            if (i == current_week) {
+                let ms_current_week = now - start - (current_week * MS_IN_WEEK);
+                emitted_this_week = math64::mul_div_down(emitted_this_week, ms_current_week, MS_IN_WEEK);
+            }; 
+            // remove everything emitted since last updated
+            if (i == last_week) {
+                let ms_last_week = ((last_week + 1) * MS_IN_WEEK) - (pool.last_updated - start);
+                emitted_this_week = math64::mul_div_down(emitted_this_week, ms_last_week, MS_IN_WEEK);
             };
 
             emitted = emitted + emitted_this_week;
@@ -464,6 +485,16 @@ module mazu_finance::staking {
         assert!(value == staked.value, 106);
         assert!(reward_index == staked.reward_index, 107);
         assert!(coin == coin::value(&staked.coin), 108);
+    }
+
+    #[test_only]
+    public fun get_reward_index<T: drop>(
+        staking: &mut Staking, 
+        clock: &Clock,
+    ): u64 {
+        let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
+        update_rewards(pool, clock::timestamp_ms(clock), staking.start);
+        pool.reward_index
     }
 }
 
