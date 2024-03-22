@@ -248,6 +248,8 @@ module mazu_finance::staking {
             get_emitted(pool, start, now), 
             pool.total_staked
         );
+        // print(&claimable_reward_index);
+        // print(&pool.reward_index);
 
         pool.reward_index = claimable_reward_index + pool.reward_index;
         pool.last_updated = now;
@@ -265,15 +267,17 @@ module mazu_finance::staking {
             // add everything emitted since start
             if (i == current_week) {
                 let ms_current_week = now - start - (current_week * MS_IN_WEEK);
-                emitted_this_week = math64::mul_div_down(emitted_this_week, ms_current_week, MS_IN_WEEK);
+                emitted = emitted + math64::mul_div_down(emitted_this_week, ms_current_week, MS_IN_WEEK);
             }; 
-            // remove everything emitted since last updated
+            // remove everything emitted since last updated for the week
             if (i == last_week) {
-                let ms_last_week = ((last_week + 1) * MS_IN_WEEK) - (pool.last_updated - start);
-                emitted_this_week = math64::mul_div_down(emitted_this_week, ms_last_week, MS_IN_WEEK);
+                let ms_last_week = pool.last_updated - start - (last_week * MS_IN_WEEK);
+                emitted = emitted - math64::mul_div_down(emitted_this_week, ms_last_week, MS_IN_WEEK);
             };
-
-            emitted = emitted + emitted_this_week;
+            // if it's a full week or last week we add everything
+            if (i != current_week) {
+                emitted = emitted + emitted_this_week;
+            };
             i = i + 1;
         };
         emitted

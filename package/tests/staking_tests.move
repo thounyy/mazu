@@ -176,46 +176,47 @@ module mazu_finance::staking_tests{
         complete_scenario(scenario, storage);
     }
 
-    // #[test]
-    // fun full_scen_no_lock_two_users() {
-    //     let (scenario, s) = init_scenario();
-    //     let scen = &mut scenario;
-    //     // deployment
-    //     clock::increment_for_testing(&mut s.clock, 10_000_000_000_000);
-    //     start_staking(scen, &mut s);
-    //     let s = forward_scenario(scen, s, OWNER);
+    #[test]
+    fun full_scen_no_lock_two_users() {
+        let (scenario, s) = init_scenario();
+        let scen = &mut scenario;
+        // deployment
+        clock::increment_for_testing(&mut s.clock, 10_000_000_000_000);
+        start_staking(scen, &mut s);
+        let s = forward_scenario(scen, s, OWNER);
 
-    //     // alice stakes
-    //     clock::increment_for_testing(&mut s.clock, 1000);
-    //     let alice_staked = staking::stake(&mut s.staking, mazu(100, scen), &mut s.clock, 0, ts::ctx(scen));
-    //     staking::assert_staked_data(&alice_staked, 10000000001000, 100, 0, 100);
-    //     let s = forward_scenario(scen, s, ALICE);
+        // alice stakes
+        clock::increment_for_testing(&mut s.clock, 1000);
+        let alice_staked = staking::stake(&mut s.staking, mazu(100, scen), &mut s.clock, 0, ts::ctx(scen));
+        staking::assert_staked_data(&alice_staked, 10000000001000, 100, 0, 100);
+        let s = forward_scenario(scen, s, ALICE);
 
-    //     // bob stakes
-    //     clock::increment_for_testing(&mut s.clock, 3000);
-    //     let reward_index = staking::get_reward_index<MAZU>(&mut s.staking, &mut s.clock);
-    //     let bob_staked = staking::stake(&mut s.staking, mazu(1000, scen), &mut s.clock, 0, ts::ctx(scen));
-    //     print(&bob_staked);
-    //     print(&reward_index);
-    //     staking::assert_staked_data(&bob_staked, 10000000004000, reward_index, 0, 1000);
-    //     let s = forward_scenario(scen, s, BOB);
+        // bob stakes
+        clock::increment_for_testing(&mut s.clock, 3000);
+        let bob_staked = staking::stake(&mut s.staking, mazu(1000, scen), &mut s.clock, 0, ts::ctx(scen));
+        let reward_index = staking::get_reward_index<MAZU>(&mut s.staking, &mut s.clock);
+        staking::assert_staked_data(&bob_staked, 10000000004000, 1000, reward_index, 1000);
+        let s = forward_scenario(scen, s, BOB);
         
-    //     // bob claims
-    //     clock::increment_for_testing(&mut s.clock, 7000);
-    //     let rewards_bob1 = staking::claim(&mut s.vault, &mut s.staking, &mut bob_staked, &mut s.clock, ts::ctx(scen));
-    //     let theoretical_rewards = (3 * 4000 / 4 - 1) * (2666666670000000 / MS_IN_WEEK);
-    //     assert!(coin::value(&rewards_bob1) == theoretical_rewards, 5);
-    //     // unstake
-    //     // clock::increment_for_testing(clock, MS_IN_WEEK);
-    //     // let (deposit, rewards2) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
-    //     // assert!(coin::value(&rewards2) == 1777777780000000, 6);
-    //     // assert!(coin::value(&deposit) == 100, 5);
+        // bob claims
+        clock::increment_for_testing(&mut s.clock, 7000);
+        let theoretical_rewards = staking::calculate_rewards(&mut s.staking, &mut bob_staked, &mut s.clock);
+        let rewards_bob1 = staking::claim(&mut s.vault, &mut s.staking, &mut bob_staked, &mut s.clock, ts::ctx(scen));
+        tu::print(b"laaaaa");
+        print(&rewards_bob1);
+        print(&theoretical_rewards);
+        assert!(coin::value(&rewards_bob1) == theoretical_rewards, 5);
+        // unstake
+        // clock::increment_for_testing(clock, MS_IN_WEEK);
+        // let (deposit, rewards2) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
+        // assert!(coin::value(&rewards2) == 1777777780000000, 6);
+        // assert!(coin::value(&deposit) == 100, 5);
 
-    //     // transfer::public_transfer(deposit, ALICE);
-    //     transfer::public_transfer(rewards_bob1, BOB);
-    //     transfer::public_transfer(bob_staked, BOB);
-    //     transfer::public_transfer(alice_staked, ALICE);
-    //     // transfer::public_transfer(rewards2, ALICE);
-    //     complete_scenario(scenario, s);
-    // }
+        // transfer::public_transfer(deposit, ALICE);
+        transfer::public_transfer(rewards_bob1, BOB);
+        transfer::public_transfer(bob_staked, BOB);
+        transfer::public_transfer(alice_staked, ALICE);
+        // transfer::public_transfer(rewards2, ALICE);
+        complete_scenario(scenario, s);
+    }
 }
