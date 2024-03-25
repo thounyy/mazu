@@ -111,7 +111,7 @@ module mazu_finance::staking {
         staking: &mut Staking, 
         coin: Coin<T>, 
         clock: &Clock,
-        weeks_locked: u64, // locked duration in weeks
+        weeks: u64, // locked duration in weeks
         ctx: &mut TxContext
     ): Staked<T> {
         assert_active(staking);
@@ -120,14 +120,14 @@ module mazu_finance::staking {
 
         let now = clock::timestamp_ms(clock);
         let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
-        let value = math64::mul_div_down(coin::value(&coin), get_boost(weeks_locked), MUL);
+        let value = math64::mul_div_down(coin::value(&coin), get_boost(weeks), MUL);
         
         update_rewards(pool, now, staking.start);
         pool.total_staked = pool.total_staked + value;
 
         Staked<T> {
             id: object::new(ctx),
-            end: now + math64::mul_div_down(MS_IN_WEEK, weeks_locked, MUL),
+            end: now + math64::mul(MS_IN_WEEK, weeks),
             value,
             reward_index: pool.reward_index,
             coin
@@ -167,7 +167,7 @@ module mazu_finance::staking {
         let now = clock::timestamp_ms(clock);
         let Staked { id, end, value, reward_index, coin } = staked;
         object::delete(id);
-
+        
         assert!(
             end <= now  || 
             (now - staking.start) / MS_IN_WEEK >= 72, // if emissions are over 
@@ -183,8 +183,7 @@ module mazu_finance::staking {
             value
         );
         
-        // pool.supply_left = pool.supply_left - rewards;
-        pool.total_staked = sub(pool.total_staked, coin::value(&coin));
+        pool.total_staked = sub(pool.total_staked, value);
         // return both staked coin and rewards
         let mazu = coin::mint(mazu::cap_mut(vault), rewards, ctx);
         (coin, mazu)
@@ -255,21 +254,21 @@ module mazu_finance::staking {
 
     // get mazu emission for current week 
     fun get_emitted(pool: &Pool, start: u64, now: u64): u64 {
-        let last_week = (pool.last_updated - start) / MS_IN_WEEK;
-        let current_week = (now - start) / MS_IN_WEEK;
+        let last_week = math64::min((pool.last_updated - start) / MS_IN_WEEK, 71);
+        let current_week = math64::min((now - start) / MS_IN_WEEK, 71);
         let emitted = 0;
         let i = last_week;
 
         while (i < current_week + 1) {
-            let emitted_this_week = emitted + *vector::borrow<u64>(&pool.emissions, i);
+            let emitted_this_week = *vector::borrow<u64>(&pool.emissions, i);
             // add everything emitted since start
             if (i == current_week) {
-                let ms_current_week = now - start - (current_week * MS_IN_WEEK);
+                let ms_current_week = math64::min(now - start - (current_week * MS_IN_WEEK), MS_IN_WEEK);
                 emitted = emitted + math64::mul_div_down(emitted_this_week, ms_current_week, MS_IN_WEEK);
             }; 
             // remove everything emitted since last updated for the week
             if (i == last_week) {
-                let ms_last_week = pool.last_updated - start - (last_week * MS_IN_WEEK);
+                let ms_last_week = math64::min(pool.last_updated - start - (last_week * MS_IN_WEEK), MS_IN_WEEK);
                 emitted = emitted - math64::mul_div_down(emitted_this_week, ms_last_week, MS_IN_WEEK);
             };
             // if it's a full week or last week we add everything
@@ -278,7 +277,7 @@ module mazu_finance::staking {
             };
             i = i + 1;
         };
-        
+
         emitted
     }
 

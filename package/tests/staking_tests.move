@@ -114,7 +114,7 @@ module mazu_finance::staking_tests{
 
     #[test]
     #[expected_failure(abort_code = mazu_finance::staking::ENotActive)]
-    fun cant_stake_before_start() {
+    fun cannot_stake_before_start() {
         let (scenario, storage) = init_scenario();
         let staked = staking::stake(&mut storage.staking, mazu(100, &mut scenario), &mut storage.clock, 0, ts::ctx(&mut scenario));
         transfer::public_transfer(staked, ALICE);
@@ -122,12 +122,83 @@ module mazu_finance::staking_tests{
     }
 
     #[test]
+    #[expected_failure(abort_code = mazu_finance::staking::EWrongLockingDuration)]
+    fun cannot_stake_locking_too_long() {
+        let (scenario, storage) = init_scenario();
+        start_staking(&mut scenario, &mut storage);
+        let staked = staking::stake(&mut storage.staking, mazu(100, &mut scenario), &mut storage.clock, 21, ts::ctx(&mut scenario));
+        transfer::public_transfer(staked, ALICE);
+        complete_scenario(scenario, storage);
+    }
+
+    #[test]
     #[expected_failure(abort_code = mazu_finance::staking::EWrongCoinSent)]
-    fun cant_stake_wrong_coin() {
+    fun cannot_stake_wrong_coin() {
         let (scenario, storage) = init_scenario();
         start_staking(&mut scenario, &mut storage);
         let staked = staking::stake(&mut storage.staking, coin::mint_for_testing<SUI>(100, ts::ctx(&mut scenario)), &mut storage.clock, 0, ts::ctx(&mut scenario));
         transfer::public_transfer(staked, ALICE);
+        complete_scenario(scenario, storage);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = mazu_finance::staking::ECannotStakeZero)]
+    fun cannot_stake_zero() {
+        let (scenario, storage) = init_scenario();
+        start_staking(&mut scenario, &mut storage);
+        let staked = staking::stake(&mut storage.staking, mazu(0, &mut scenario), &mut storage.clock, 0, ts::ctx(&mut scenario));
+        transfer::public_transfer(staked, ALICE);
+        complete_scenario(scenario, storage);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = mazu_finance::staking::EStakedLocked)]
+    fun cannot_ustake_if_locked() {
+        let (scenario, storage) = init_scenario();
+        start_staking(&mut scenario, &mut storage);
+        let staked = staking::stake(&mut storage.staking, mazu(100, &mut scenario), &mut storage.clock, 20, ts::ctx(&mut scenario));
+        clock::increment_for_testing(&mut storage.clock, MS_IN_WEEK * 20 - 1);
+        let (deposit, rewards) = staking::unstake(&mut storage.vault, &mut storage.staking, staked, &mut storage.clock, ts::ctx(&mut scenario));
+        transfer::public_transfer(deposit, ALICE);
+        transfer::public_transfer(rewards, ALICE);
+        complete_scenario(scenario, storage);
+    }
+
+    #[test]
+    fun get_total_emissions_after_72_weeks() {
+        let (scenario, storage) = init_scenario();
+        start_staking(&mut scenario, &mut storage);
+        let staked_mazu = staking::stake(&mut storage.staking, mazu(100, &mut scenario), &mut storage.clock, 0, ts::ctx(&mut scenario));
+        clock::increment_for_testing(&mut storage.clock, MS_IN_WEEK * 72);
+        let (deposit_mazu, rewards_mazu) = staking::unstake(&mut storage.vault, &mut storage.staking, staked_mazu, &mut storage.clock, ts::ctx(&mut scenario));
+        assert!(coin::value(&rewards_mazu) == 44444444520000000, 0);
+        let staked_lp = staking::stake(&mut storage.staking, coin::mint_for_testing<LP<MAZU,SUI>>(100, ts::ctx(&mut scenario)), &mut storage.clock, 0, ts::ctx(&mut scenario));
+        clock::increment_for_testing(&mut storage.clock, MS_IN_WEEK * 72);
+        let (deposit_lp, rewards_lp) = staking::unstake(&mut storage.vault, &mut storage.staking, staked_lp, &mut storage.clock, ts::ctx(&mut scenario));
+        assert!(coin::value(&rewards_lp) == 213333333350000000, 0);
+        transfer::public_transfer(rewards_mazu, ALICE);
+        transfer::public_transfer(deposit_mazu, ALICE);
+        transfer::public_transfer(deposit_lp, ALICE);
+        transfer::public_transfer(rewards_lp, ALICE);
+        complete_scenario(scenario, storage);
+    }
+
+    #[test]
+    fun no_more_rewards_after_72_weeks() {
+        let (scenario, storage) = init_scenario();
+        start_staking(&mut scenario, &mut storage);
+        let staked = staking::stake(&mut storage.staking, mazu(100, &mut scenario), &mut storage.clock, 0, ts::ctx(&mut scenario));
+        clock::increment_for_testing(&mut storage.clock, MS_IN_WEEK * 72);
+        let (deposit, rewards) = staking::unstake(&mut storage.vault, &mut storage.staking, staked, &mut storage.clock, ts::ctx(&mut scenario));
+        assert!(coin::value(&rewards) == 44444444520000000, 0);
+        let staked2 = staking::stake(&mut storage.staking, mazu(100, &mut scenario), &mut storage.clock, 0, ts::ctx(&mut scenario));
+        clock::increment_for_testing(&mut storage.clock, MS_IN_WEEK * 72);
+        let (deposit2, rewards2) = staking::unstake(&mut storage.vault, &mut storage.staking, staked2, &mut storage.clock, ts::ctx(&mut scenario));
+        assert!(coin::value(&rewards2) == 0, 0);
+        transfer::public_transfer(rewards, ALICE);
+        transfer::public_transfer(deposit, ALICE);
+        transfer::public_transfer(deposit2, ALICE);
+        transfer::public_transfer(rewards2, ALICE);
         complete_scenario(scenario, storage);
     }
 
@@ -146,8 +217,8 @@ module mazu_finance::staking_tests{
         assert!(coin::value(&rewards1) == 0, 0);
         // unstake
         let (deposit, rewards2) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
-        assert!(coin::value(&rewards2) == 0, 1);
-        assert!(coin::value(&deposit) == 100, 2);
+        assert!(coin::value(&rewards2) == 0, 0);
+        assert!(coin::value(&deposit) == 100, 0);
 
         transfer::public_transfer(deposit, ALICE);
         transfer::public_transfer(rewards1, ALICE);
@@ -195,16 +266,59 @@ module mazu_finance::staking_tests{
         // claim
         clock::increment_for_testing(clock, MS_IN_WEEK);
         let rewards1 = staking::claim(vault, staking, &mut staked, clock, ts::ctx(scen));
-        assert!(coin::value(&rewards1) == 2666666670000000, 5);
+        assert!(coin::value(&rewards1) == 2666666670000000, 0);
         // unstake
         clock::increment_for_testing(clock, MS_IN_WEEK);
         let (deposit, rewards2) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
-        assert!(coin::value(&rewards2) == 1777777780000000, 6);
-        assert!(coin::value(&deposit) == 100, 5);
+        assert!(coin::value(&rewards2) == 1777777780000000, 0);
+        assert!(coin::value(&deposit) == 100, 0);
 
         transfer::public_transfer(deposit, ALICE);
         transfer::public_transfer(rewards1, ALICE);
         transfer::public_transfer(rewards2, ALICE);
+        complete_scenario(scenario, storage);
+    }
+
+    #[test]
+    fun stake_different_boosts() {
+        let (scenario, storage) = init_scenario();
+        start_staking(&mut scenario, &mut storage);
+        let scen = &mut scenario;
+        let (staking, vault, clock) = (&mut storage.staking, &mut storage.vault, &mut storage.clock);
+        // boost 8 weeks
+        let reward_index = 0;
+        let staked = staking::stake(staking, mazu(100, scen), clock, 8, ts::ctx(scen));
+        staking::assert_staked_data(&staked, MS_IN_WEEK * 8, 200, reward_index, 100);
+        clock::increment_for_testing(clock, MS_IN_WEEK * 8);
+        let (deposit, rewards1) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
+        assert!(coin::value(&rewards1) == 12800000000000000, 0);
+        // boost 12 weeks
+        let reward_index = reward_index + 12800000000000000 / 200;
+        let staked = staking::stake(staking, deposit, clock, 12, ts::ctx(scen));
+        staking::assert_staked_data(&staked, MS_IN_WEEK * 20, 300, reward_index, 100);
+        clock::increment_for_testing(clock, MS_IN_WEEK * 12);
+        let (deposit, rewards2) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
+        assert!(coin::value(&rewards2) == 9555555579999900, 0);
+        // boost 16 weeks
+        let reward_index = reward_index + 9555555579999900 / 300;
+        let staked = staking::stake(staking, deposit, clock, 16, ts::ctx(scen));
+        staking::assert_staked_data(&staked, MS_IN_WEEK * 36, 500, reward_index, 100);
+        clock::increment_for_testing(clock, MS_IN_WEEK * 16);
+        let (deposit, rewards3) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
+        assert!(coin::value(&rewards3) == 8444444420000000, 0);
+        // boost 20 weeks
+        let reward_index = reward_index + 8444444420000000 / 500;
+        let staked = staking::stake(staking, deposit, clock, 20, ts::ctx(scen));
+        staking::assert_staked_data(&staked, MS_IN_WEEK * 56, 900, reward_index, 100);
+        clock::increment_for_testing(clock, MS_IN_WEEK * 20);
+        let (deposit, rewards4) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
+        assert!(coin::value(&rewards4) == 7955555559999300, 0);
+
+        transfer::public_transfer(deposit, ALICE);
+        transfer::public_transfer(rewards1, ALICE);
+        transfer::public_transfer(rewards2, ALICE);
+        transfer::public_transfer(rewards3, ALICE);
+        transfer::public_transfer(rewards4, ALICE);
         complete_scenario(scenario, storage);
     }
 
