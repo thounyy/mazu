@@ -120,14 +120,14 @@ module mazu_finance::staking {
 
         let now = clock::timestamp_ms(clock);
         let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
-        let value = coin::value(&coin) * get_boost(weeks_locked);
+        let value = math64::mul_div_down(coin::value(&coin), get_boost(weeks_locked), MUL);
         
         update_rewards(pool, now, staking.start);
         pool.total_staked = pool.total_staked + value;
 
         Staked<T> {
             id: object::new(ctx),
-            end: now + MS_IN_WEEK * weeks_locked,
+            end: now + math64::mul_div_down(MS_IN_WEEK, weeks_locked, MUL),
             value,
             reward_index: pool.reward_index,
             coin
@@ -282,15 +282,21 @@ module mazu_finance::staking {
         emitted
     }
 
-    // get boost multiplier for duration
-    // fun get_boost(days: u64): u64 {
-    //     // should be more than 1 month and less than 5
-    //     assert!(days >= 30 && days < 153, EWrongLockingDuration);
-    //     math64::mul_div_down(days, MUL, 30)
-    // } 
-    fun get_boost(days: u64): u64 {
-        days + 1
-    } 
+    fun get_boost(weeks: u64): u64 {
+        if (weeks == 0) {
+            MUL
+        } else if (weeks <= 8) {
+            MUL + weeks * MUL / 8
+        } else if (weeks <= 12) {
+            2 * MUL + (weeks - 8) * MUL / 4
+        } else if (weeks <= 16) {
+            3 * MUL + (weeks - 12) * MUL / 2
+        } else if (weeks <= 20) {
+            5 * MUL + (weeks - 16) * MUL
+        } else {
+            abort EWrongLockingDuration
+        }
+    }
 
     fun assert_active(staking: &Staking) {
         assert!(staking.active, ENotActive);
