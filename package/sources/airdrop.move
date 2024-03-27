@@ -1,5 +1,6 @@
 module mazu_finance::airdrop {
     use std::string::String;
+    use std::vector;
     use sui::object::{Self, UID};
     use sui::coin::{Self, Coin};
     use sui::tx_context::TxContext;
@@ -10,7 +11,7 @@ module mazu_finance::airdrop {
     
     const MAX_AIRDROP_SUPPLY: u64 = 8_888_888_888_888_888; // 1%
 
-    const ENoMoreCoinsToAirdrop: u64 = 0;
+    const ENoMoreCoinsToClaim: u64 = 0;
 
     struct Request has store {}
 
@@ -21,15 +22,13 @@ module mazu_finance::airdrop {
 
     struct Airdrop has key {
         id: UID,
-        max_supply: u64,
-        remaining: u64
+        supply: u64
     }
 
     fun init(ctx: &mut TxContext) {
         transfer::share_object(Airdrop {
             id: object::new(ctx),
-            max_supply: MAX_AIRDROP_SUPPLY,
-            remaining: MAX_AIRDROP_SUPPLY,
+            supply: MAX_AIRDROP_SUPPLY,
         })
     }
 
@@ -41,10 +40,13 @@ module mazu_finance::airdrop {
         vault: &mut Vault, 
         ctx: &mut TxContext
     ): Coin<MAZU> {
+        assert!(airdrop.supply > 0, ENoMoreCoinsToClaim);
+
         let Ticket { id, amount } = ticket;
         object::delete(id);
 
-        airdrop.remaining = airdrop.remaining - amount;
+        let amount = if (airdrop.supply < amount) airdrop.supply else amount;
+        airdrop.supply = airdrop.supply - amount;
 
         coin::mint(mazu::cap_mut(vault), amount, ctx)
     }
@@ -70,16 +72,35 @@ module mazu_finance::airdrop {
     }
 
     // step 5: create (and send via PTB) as many airdroplist as needed (according to max)
-    public fun new(_: &Request, airdrop: &mut Airdrop, amount: u64, ctx: &mut TxContext): Ticket {
-        assert!(airdrop.max_supply + amount >= 0, ENoMoreCoinsToAirdrop);
-        airdrop.max_supply = airdrop.max_supply - amount;
+    public fun drop(
+        _: &Request, 
+        // airdrop: &mut Airdrop, 
+        amount: u64, 
+        recipients: vector<address>, 
+        ctx: &mut TxContext
+    ) {
+        // assert!(airdrop.to_distribute + amount >= 0, ENoMoreCoinsToAirdrop);
 
-        Ticket { id: object::new(ctx), amount }
+        while (vector::length(&recipients) != 0) {
+            // airdrop.to_distribute = airdrop.to_distribute - amount;
+    
+            transfer::public_transfer(
+                Ticket { id: object::new(ctx), amount }, 
+                vector::pop_back(&mut recipients)
+            );
+        };
     }
 
     // step 6: destroy the request
     public fun complete(request: Request) {
         let Request {} = request;
+    }
+    
+    // === Test functions ===
+    
+    #[test_only]
+    public fun init_for_testing(ctx: &mut TxContext) {
+        init(ctx);
     }
 }
 

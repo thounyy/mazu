@@ -12,7 +12,7 @@ dotenv.config();
 
 export const keypair = Ed25519Keypair.fromSecretKey(Uint8Array.from(Buffer.from(process.env.KEY!, "base64")).slice(1));
 
-export const client = new SuiClient({ url: getFullnodeUrl('testnet') });
+export const client = new SuiClient({ url: "https://sui-testnet-endpoint.blockvision.org" });
 
 export const getId = (type: string): string | undefined => {
     try {
