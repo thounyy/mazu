@@ -1,7 +1,9 @@
 import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { client, keypair, getId } from '../utils.js';
 
+
 (async () => {
+	
 	try {
 		console.log("calling...")
 
@@ -10,10 +12,13 @@ import { client, keypair, getId } from '../utils.js';
 		const packageId = getId("package_id");
 
 		tx.moveCall({
-			target: `${packageId}::staking::propose_start`,
+			target: `${packageId}::mazu::propose_transfer`,
 			arguments: [
 				tx.object(getId("multisig::Multisig")), 
-				tx.pure("start")
+				tx.pure("transfer"), // proposal name / human-readable id
+				tx.pure("community"), // stakeholder name (Vault fields)
+				tx.pure(10), // amount
+				tx.pure("0x67fa77f2640ca7e0141648bf008e13945263efad6dc429303ad49c740e2084a9"), // recipient
 			]
 		});
 
@@ -21,7 +26,7 @@ import { client, keypair, getId } from '../utils.js';
 			target: `${packageId}::multisig::approve_proposal`,
 			arguments: [
 				tx.object(getId("multisig::Multisig")), 
-				tx.pure("start")
+				tx.pure("transfer")
 			]
 		});
 
@@ -29,22 +34,21 @@ import { client, keypair, getId } from '../utils.js';
 			target: `${packageId}::multisig::execute_proposal`,
 			arguments: [
 				tx.object(getId("multisig::Multisig")), 
-				tx.pure("start")
+				tx.pure("transfer")
 			]
 		});
 
 		const [request] = tx.moveCall({
-			target: `${packageId}::staking::start_start`,
+			target: `${packageId}::mazu::start_transfer`,
 			arguments: [
 				tx.object(proposal)
 			]
 		});
-
+		
 		tx.moveCall({
-			target: `${packageId}::staking::complete_start`,
+			target: `${packageId}::mazu::complete_transfer`,
 			arguments: [
-				tx.object("0x0000000000000000000000000000000000000000000000000000000000000006"),
-				tx.object(getId("staking::Staking")), 
+				tx.object(getId("mazu::Vault")),
 				tx.object(request)
 			]
 		});

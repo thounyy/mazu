@@ -15,7 +15,9 @@
     "unstake": "bun ./src/staking/unstake.ts",
     "start": "bun ./src/staking/start.ts",
     "airdrop": "bun ./src/airdrop/airdrop.ts",
-    "claim_airdrop": "bun ./src/airdrop/claim.ts"
+    "claim_airdrop": "bun ./src/airdrop/claim.ts",
+    "transfer": "bun ./src/coin/transfer.ts",
+    "metadata": "bun ./src/coin/metadata.ts"
   },
   "dependencies": {
     "@mysten/sui.js": "^0.49.1",

@@ -20,7 +20,7 @@ export const getId = (type: string): string | undefined => {
         const parsedData: IObjectInfo[] = JSON.parse(rawData);
         const typeToId = new Map(parsedData.map(item => [item.type, item.id]));
         for (let [key, value] of typeToId) {
-            if (key && type.startsWith(key)) {
+            if (key && key.startsWith(type)) {
                 return value;
             } 
         }

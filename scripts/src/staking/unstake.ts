@@ -7,7 +7,7 @@ import { client, keypair, getId } from '../utils.js';
 
 		const tx = new TransactionBlock();
 
-		const packageId = getId("package");
+		const packageId = getId("package_id");
 
 		const [coins, rewards] = tx.moveCall({
 			target: `${packageId}::staking::unstake`,

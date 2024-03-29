@@ -1,7 +1,9 @@
 import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { client, keypair, getId } from '../utils.js';
 
+
 (async () => {
+	
 	try {
 		console.log("calling...")
 
@@ -10,10 +12,14 @@ import { client, keypair, getId } from '../utils.js';
 		const packageId = getId("package_id");
 
 		tx.moveCall({
-			target: `${packageId}::staking::propose_start`,
+			target: `${packageId}::mazu::propose_update_metadata`,
 			arguments: [
 				tx.object(getId("multisig::Multisig")), 
-				tx.pure("start")
+				tx.pure("metadata"), // proposal name / human-readable id
+				tx.pure("New name"),
+				tx.pure("New symbol"),
+				tx.pure("New description"),
+				tx.pure("New icon url"),
 			]
 		});
 
@@ -21,7 +27,7 @@ import { client, keypair, getId } from '../utils.js';
 			target: `${packageId}::multisig::approve_proposal`,
 			arguments: [
 				tx.object(getId("multisig::Multisig")), 
-				tx.pure("start")
+				tx.pure("metadata")
 			]
 		});
 
@@ -29,22 +35,22 @@ import { client, keypair, getId } from '../utils.js';
 			target: `${packageId}::multisig::execute_proposal`,
 			arguments: [
 				tx.object(getId("multisig::Multisig")), 
-				tx.pure("start")
+				tx.pure("metadata")
 			]
 		});
 
 		const [request] = tx.moveCall({
-			target: `${packageId}::staking::start_start`,
+			target: `${packageId}::mazu::start_update_metadata`,
 			arguments: [
 				tx.object(proposal)
 			]
 		});
-
+		
 		tx.moveCall({
-			target: `${packageId}::staking::complete_start`,
+			target: `${packageId}::mazu::complete_update_metadata`,
 			arguments: [
-				tx.object("0x0000000000000000000000000000000000000000000000000000000000000006"),
-				tx.object(getId("staking::Staking")), 
+				tx.object(getId("mazu::Vault")),
+				tx.object(getId("coin::CoinMetadata")),
 				tx.object(request)
 			]
 		});

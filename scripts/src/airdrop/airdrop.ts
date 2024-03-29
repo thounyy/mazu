@@ -11,7 +11,7 @@ import { client, keypair, getId } from '../utils.js';
 
 		const tx = new TransactionBlock();
 
-		const packageId = getId("package");
+		const packageId = getId("package_id");
 
 		tx.moveCall({
 			target: `${packageId}::airdrop::propose`,
