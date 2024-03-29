@@ -13,12 +13,10 @@ module mazu_finance::vesting {
     const ENotEnoughUnlocked: u64 = 0;
     const EUnknownStakeholder: u64 = 1;
     const EWrongProposal: u64 = 2;
-    const ENoMoreCoinsToLock: u64 = 3;
-    const EUnlockedStillAttached: u64 = 4;
+    const ELockedNotEmpty: u64 = 3;
 
     const MAX_TEAM: u64 = 88_888_888_888_888_888 * 2; // 20%
     const MAX_PRIVATE_SALE: u64 = 88_888_888_888_888_888; // 10%
-    const MAX_PRIVATE_VESTED: u64 = 71_111_111_111_111_110; // 80% of private sale
 
     struct Request has store { 
         stakeholder: String, // private_sale or team
@@ -30,7 +28,7 @@ module mazu_finance::vesting {
         id: UID,
         // vested mazu coins remaining
         coins: Coin<MAZU>,
-        // total coin allocated at the beginning
+        // total coin vested at the beginning
         allocation: u64,
         // vesting start epoch
         start: u64, // used to determinate if private_sale or team
@@ -43,10 +41,17 @@ module mazu_finance::vesting {
     public fun unlock(locked: &mut Locked<MAZU>, amount: u64, ctx: &mut TxContext): Coin<MAZU> {
         let schedule_epoch = tx_context::epoch(ctx) - locked.start;
         let total_unlocked = math64::mul_div_down(locked.allocation, schedule_epoch, locked.end - locked.start);
-        let claimed = locked.allocation - coin::value(&locked.coins);
-        assert!(amount <= total_unlocked - claimed, ENotEnoughUnlocked);
+        let claimed = sub(locked.allocation, coin::value(&locked.coins));
+        assert!(amount <= sub(total_unlocked, claimed), ENotEnoughUnlocked);
                 
         coin::split(&mut locked.coins, amount, ctx)
+    }
+
+    public fun destroy_empty(locked: Locked<MAZU>, vault: &mut Vault) {
+        assert!(coin::value(&locked.coins) == 0, ELockedNotEmpty);
+        let Locked { id, coins, allocation: _, start: _, end: _ } = locked;
+        object::delete(id);
+        coin::burn(mazu::cap_mut(vault), coins);
     }
 
     // === Multisig functions === 
@@ -81,40 +86,63 @@ module mazu_finance::vesting {
 
     // step 5: create (and send via PTB) as many Locked mazu as needed (according to max)
     public fun new(request: &mut Request, vault: &mut Vault, ctx: &mut TxContext) {
-        let amount = vector::pop_back(&mut request.amounts);
-        let addr = vector::pop_back(&mut request.addresses);
         let epoch = tx_context::epoch(ctx);
-        let end = epoch + 548;
+        let end = if (request.stakeholder == string::utf8(b"private_sale")) {
+            epoch + 274
+        } else { epoch + 548 };
 
-        mazu::handle_stakeholder(vault, request.stakeholder, amount, ctx);
-        let coins = coin::mint(mazu::cap_mut(vault), amount, ctx);
+        while (vector::length(&request.addresses) != 0) {
+            let amount = vector::pop_back(&mut request.amounts);
+            let addr = vector::pop_back(&mut request.addresses);
 
-        if (request.stakeholder == string::utf8(b"private_sale")) {
-            let unlocked_amount = math64::div_down(amount, 5);
-            let coins = coin::mint(mazu::cap_mut(vault), unlocked_amount, ctx);
-            transfer::public_transfer(coins, addr);
+            mazu::handle_stakeholder(vault, request.stakeholder, amount, ctx);
 
-            amount = amount - unlocked_amount;
-            end = epoch + 274;
-        };
-        
-        transfer::transfer(
-            Locked { 
-                id: object::new(ctx), 
-                coins, 
-                allocation: amount,
-                start: epoch, 
-                end 
-            },
-            addr
-        )
+            if (request.stakeholder == string::utf8(b"private_sale")) {
+                let unlocked_amount = math64::div_down(amount, 5);
+                let coins = coin::mint(mazu::cap_mut(vault), unlocked_amount, ctx);
+                transfer::public_transfer(coins, addr);
+
+                amount = sub(amount, unlocked_amount);
+            };
+            
+            transfer::transfer(
+                Locked { 
+                    id: object::new(ctx), 
+                    coins: coin::mint(mazu::cap_mut(vault), amount, ctx), 
+                    allocation: amount,
+                    start: epoch, 
+                    end 
+                },
+                addr
+            );
+        }
     }
 
     // step 6: destroy the request
     public fun complete(request: Request) {
-        assert!(vector::length(&request.amounts) == 0, ENoMoreCoinsToLock);
         let Request { stakeholder: _, amounts: _, addresses: _ } = request;
     }
 
     // === Private functions ===
+
+    fun sub(x: u64, y: u64): u64 {
+        if (x > y) x - y else 0
+    }
+
+    // === Test functions ===
+
+    #[test_only]
+    public fun assert_locked_data(
+        locked: &Locked<MAZU>,
+        coins: u64,
+        allocation: u64,
+        start: u64,
+        end: u64,
+    ) {
+        assert!(coin::value(&locked.coins) == coins, 0);
+        assert!(locked.allocation == allocation, 0);
+        assert!(locked.start == start, 0);
+        assert!(locked.end == end, 0);
+    }
 }
+

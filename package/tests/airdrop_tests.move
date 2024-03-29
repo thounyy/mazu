@@ -3,7 +3,6 @@ module mazu_finance::airdrop_tests{
     use std::string;
     use std::vector;
     use sui::test_scenario::{Self as ts, Scenario};
-    use sui::clock::{Self, Clock};
     use sui::coin::{Self};
     use sui::transfer;
 

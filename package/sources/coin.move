@@ -1,5 +1,4 @@
 module mazu_finance::mazu {
-    use std::debug::print;
     use std::option;
     use std::string::{Self, String};
     use sui::coin::{Self, Coin, TreasuryCap, CoinMetadata};
@@ -230,8 +229,6 @@ module mazu_finance::mazu {
                 ENotEnoughFundsUnlocked
             );
             vault.marketing = sub(vault.marketing, amount);
-        } else {
-            abort EUnknownStakeholder
         };
     }
 
@@ -263,8 +260,6 @@ module mazu_finance::mazu {
             tge = math64::div_down(MAX_MARKETING, 4);
             vesting = MAX_MARKETING - tge;
             period = 548;
-        } else {
-            abort EUnknownStakeholder
         };
 
         (tge, vesting, period)

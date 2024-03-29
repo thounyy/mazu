@@ -1,6 +1,5 @@
 #[test_only]
 module mazu_finance::staking_tests{
-    use std::debug::print;
     use std::string;
     use sui::test_scenario::{Self as ts, Scenario};
     use sui::clock::{Self, Clock};

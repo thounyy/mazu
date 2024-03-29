@@ -1,7 +1,6 @@
 module mazu_finance::staking {
-    use std::debug::print;
     use std::vector;
-    use std::string::{Self, String};
+    use std::string::String;
     use sui::coin::{Self, Coin};
     use sui::sui::SUI;
     use sui::transfer;
@@ -9,7 +8,6 @@ module mazu_finance::staking {
     use sui::object::{Self, UID};
     use sui::dynamic_field as df;
     use sui::clock::{Self, Clock};
-    use sui::event;
 
     use flowxswap::pair::LP;
 
