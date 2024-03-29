@@ -17,7 +17,9 @@
     "airdrop": "bun ./src/airdrop/airdrop.ts",
     "claim_airdrop": "bun ./src/airdrop/claim.ts",
     "transfer": "bun ./src/coin/transfer.ts",
-    "metadata": "bun ./src/coin/metadata.ts"
+    "metadata": "bun ./src/coin/metadata.ts",
+    "vesting": "bun ./src/vesting/vesting.ts",
+    "unlock": "bun ./src/vesting/unlock.ts"
   },
   "dependencies": {
     "@mysten/sui.js": "^0.49.1",

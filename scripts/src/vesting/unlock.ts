@@ -10,13 +10,23 @@ import { client, keypair, getId } from '../utils.js';
 		const packageId = getId("package_id");
 
 		const [mazu] = tx.moveCall({
-			target: `${packageId}::airdrop::claim`,
+			target: `${packageId}::vesting::unlock`,
 			arguments: [
-				tx.object("0xfa9c02c85217a3176ed422ca74e1c4457573da2634c7601b0d78493b386737d2"), 
-				tx.object(getId("airdrop::Airdrop")), 
-				tx.pure(getId("mazu::Vault")),
+				tx.object("0xb2b1148d2ee50063e292551956a906764762f8e1786083dc0adaf203a6e64bda"), // Locked object 
+				tx.pure(0), // amount
 			],
 		});
+
+		// if Locked object has 0 coins left after unlock call:
+		// so if locked.coins.value - amount == 0 then destroy_empty
+
+		// tx.moveCall({
+		// 	target: `${packageId}::vesting::destroy_empty`,
+		// 	arguments: [
+		// 		tx.object("0xb2b1148d2ee50063e292551956a906764762f8e1786083dc0adaf203a6e64bda"), // Locked object 
+		// 		tx.object(getId("mazu::Vault")),
+		// 	]
+		// })
 
 		tx.transferObjects([mazu], keypair.getPublicKey().toSuiAddress());
 
