@@ -3,14 +3,13 @@ module mazu_finance::staking_tests{
     use std::debug::print;
     use std::string;
     use sui::test_scenario::{Self as ts, Scenario};
-    use sui::test_utils as tu;
     use sui::clock::{Self, Clock};
     use sui::coin::{Self, Coin};
     use sui::transfer;
     use sui::sui::SUI;
 
     use flowxswap::pair::LP;
-    use mazu_finance::staking::{Self, Staking, Staked};
+    use mazu_finance::staking::{Self, Staking};
     use mazu_finance::mazu::{Self, Vault, MAZU};
     use mazu_finance::multisig::{Self, Multisig};
 
@@ -109,6 +108,14 @@ module mazu_finance::staking_tests{
     #[test]
     fun publish_package() {
         let (scenario, storage) = init_scenario();
+        complete_scenario(scenario, storage);
+    }
+
+    #[test]
+    fun should_burn() {
+        let (scenario, storage) = init_scenario();
+        let mazu = mazu(100, &mut scenario);
+        mazu::burn(&mut storage.vault, mazu);
         complete_scenario(scenario, storage);
     }
 

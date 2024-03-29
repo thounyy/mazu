@@ -19,7 +19,6 @@ module mazu_finance::airdrop_tests{
         vault: Vault,
         airdrop: Airdrop,
         multisig: Multisig,
-        clock: Clock,
     }
 
     fun init_scenario(): (Scenario, Storage) {
@@ -30,42 +29,36 @@ module mazu_finance::airdrop_tests{
         airdrop::init_for_testing(ts::ctx(scen));
         mazu::init_for_testing(ts::ctx(scen));
         multisig::init_for_testing(ts::ctx(scen));
-        let clock = clock::create_for_testing(ts::ctx(scen));
-        clock::share_for_testing(clock);
         
         ts::next_tx(scen, OWNER);
 
         // get shared objects for storage
-        let clock = ts::take_shared<Clock>(scen);
         let vault = ts::take_shared<Vault>(scen);
         let airdrop = ts::take_shared<Airdrop>(scen);
         let multisig = ts::take_shared<Multisig>(scen);
 
-        (scenario, Storage {vault, airdrop, multisig, clock})
+        (scenario, Storage {vault, airdrop, multisig})
     }
 
     fun forward_scenario(scen: &mut Scenario, storage: Storage, user: address): Storage {
-        let Storage { vault, airdrop, multisig, clock } = storage;
+        let Storage { vault, airdrop, multisig } = storage;
 
-        ts::return_shared(clock);
         ts::return_shared(vault);
         ts::return_shared(airdrop);
         ts::return_shared(multisig);
 
         ts::next_tx(scen, user);
 
-        let clock = ts::take_shared<Clock>(scen);
         let vault = ts::take_shared<Vault>(scen);
         let airdrop = ts::take_shared<Airdrop>(scen);
         let multisig = ts::take_shared<Multisig>(scen);
 
-        Storage {vault, airdrop, multisig, clock}
+        Storage {vault, airdrop, multisig}
     }
 
     fun complete_scenario(scenario: Scenario, storage: Storage) {
-        let Storage { vault, airdrop, multisig, clock } = storage;
+        let Storage { vault, airdrop, multisig } = storage;
 
-        clock::destroy_for_testing(clock);
         ts::return_shared(vault);
         ts::return_shared(airdrop);
         ts::return_shared(multisig);
