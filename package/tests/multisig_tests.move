@@ -354,7 +354,49 @@ module mazu_finance::multisig_tests{
     }
 
     #[test]
+    #[expected_failure(abort_code = mazu_finance::multisig::EAlreadyMember)]
+    fun cannot_add_already_existing_members() {
+        let (scenario, s) = init_scenario();
+        let scen = &mut scenario;
+        let members = vector::empty();
+        vector::push_back(&mut members, ALICE);
+        vector::push_back(&mut members, OWNER);
+
+        modify_multisig(
+            scen,
+            &mut s,
+            b"add",
+            true,
+            1,
+            members,
+        );
+
+        complete_scenario(scenario, s);
+    }
+
+    #[test]
     #[expected_failure(abort_code = mazu_finance::multisig::ENotMember)]
+    fun cannot_remove_non_existing_members() {
+        let (scenario, s) = init_scenario();
+        let scen = &mut scenario;
+        let members = vector::empty();
+        vector::push_back(&mut members, ALICE);
+        vector::push_back(&mut members, BOB);
+
+        modify_multisig(
+            scen,
+            &mut s,
+            b"remove",
+            false,
+            1,
+            members,
+        );
+
+        complete_scenario(scenario, s);
+    }
+
+    #[test]
+    #[expected_failure(abort_code = mazu_finance::multisig::ECallerIsNotMember)]
     fun non_member_cannot_propose() {
         let (scenario, s) = init_scenario();
         let scen = &mut scenario;

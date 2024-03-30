@@ -13,10 +13,12 @@ module mazu_finance::multisig {
 
     // === Errors ===
 
-    const ENotMember: u64 = 0;
+    const ECallerIsNotMember: u64 = 0;
     const EThresholdTooHigh: u64 = 1;
     const EThresholdNotReached: u64 = 2;
     const EProposalNotEmpty: u64 = 3;
+    const ENotMember: u64 = 4;
+    const EAlreadyMember: u64 = 5;
 
     // === Structs ===
 
@@ -84,12 +86,26 @@ module mazu_finance::multisig {
         addresses: vector<address>, // addresses to add or remove
         ctx: &mut TxContext
     ) {
+        // verify proposed addresses match current list
+        let len = vector::length(&addresses);
+        let i = 0;
+        while (i < len) {
+            let addr = vector::borrow(&addresses, i);
+            if (is_add) {
+                assert!(!vec_set::contains(&multisig.members, addr), EAlreadyMember);
+            } else {
+                assert!(vec_set::contains(&multisig.members, addr), ENotMember);
+            };
+            i = i + 1;
+        };
+        // verify threshold is reachable with new members 
         let new_addr_len = if (is_add) {
             vector::length(&addresses) + vec_set::size(&multisig.members)
         } else {
             vec_set::size(&multisig.members) - vector::length(&addresses)
         };
         assert!(new_addr_len >= threshold, EThresholdTooHigh);
+
         let request = ModifyMultisigRequest { is_add, threshold, addresses };
         create_proposal(multisig, name, request, ctx);
     }
@@ -211,7 +227,7 @@ module mazu_finance::multisig {
     fun assert_is_member(multisig: &Multisig, ctx: &TxContext) {
         assert!(
             vec_set::contains(&multisig.members, &tx_context::sender(ctx)), 
-            ENotMember
+            ECallerIsNotMember
         );
     }
 
