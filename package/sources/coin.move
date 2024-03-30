@@ -8,7 +8,7 @@ module mazu_finance::mazu {
     use sui::tx_context::{Self, TxContext};
 
     use mazu_finance::multisig::{Self, Multisig, Proposal};
-    use mazu_finance::math64;
+    use mazu_finance::math;
 
     friend mazu_finance::airdrop;
     friend mazu_finance::staking;
@@ -191,44 +191,44 @@ module mazu_finance::mazu {
             tx_context::epoch(ctx) - vault.start
         } else { period }; // cannot be more than vesting period
 
-        let unlocked_amount = tge + math64::mul_div_down(duration, vesting, period);
+        let unlocked_amount = tge + math::mul_div_down(duration, vesting, period);
 
         if (stakeholder == string::utf8(b"community")) {
             assert!(
-                sub(unlocked_amount, sub(MAX_COMMUNITY_INCENTIVES, vault.community)) >= amount, 
+                math::sub(unlocked_amount, math::sub(MAX_COMMUNITY_INCENTIVES, vault.community)) >= amount, 
                 ENotEnoughFundsUnlocked
             );
-            vault.community = sub(vault.community, amount);
+            vault.community = math::sub(vault.community, amount);
         } else if (stakeholder == string::utf8(b"team")) {
             assert!(
-                sub(unlocked_amount, sub(MAX_TEAM, vault.team)) >= amount, 
+                math::sub(unlocked_amount, math::sub(MAX_TEAM, vault.team)) >= amount, 
                 ENotEnoughFundsUnlocked
             );
-            vault.team = sub(vault.team, amount);
+            vault.team = math::sub(vault.team, amount);
         } else if (stakeholder == string::utf8(b"strategy")) {
             assert!(
-                sub(unlocked_amount, sub(MAX_STRATEGY, vault.strategy)) >= amount, 
+                math::sub(unlocked_amount, math::sub(MAX_STRATEGY, vault.strategy)) >= amount, 
                 ENotEnoughFundsUnlocked
             );
-            vault.strategy = sub(vault.strategy, amount);
+            vault.strategy = math::sub(vault.strategy, amount);
         } else if (stakeholder == string::utf8(b"private_sale")) {
             assert!(
-                sub(unlocked_amount, sub(MAX_PRIVATE_SALE, vault.private_sale)) >= amount, 
+                math::sub(unlocked_amount, math::sub(MAX_PRIVATE_SALE, vault.private_sale)) >= amount, 
                 ENotEnoughFundsUnlocked
             );
-            vault.private_sale = sub(vault.private_sale, amount);
+            vault.private_sale = math::sub(vault.private_sale, amount);
         } else if (stakeholder == string::utf8(b"public_sale")) {
             assert!(
-                sub(unlocked_amount, sub(MAX_PUBLIC_SALE, vault.public_sale)) >= amount, 
+                math::sub(unlocked_amount, math::sub(MAX_PUBLIC_SALE, vault.public_sale)) >= amount, 
                 ENotEnoughFundsUnlocked
             );
-            vault.public_sale = sub(vault.public_sale, amount);
+            vault.public_sale = math::sub(vault.public_sale, amount);
         } else if (stakeholder == string::utf8(b"marketing")) {
             assert!(
-                sub(unlocked_amount, sub(MAX_MARKETING, vault.marketing)) >= amount, 
+                math::sub(unlocked_amount, math::sub(MAX_MARKETING, vault.marketing)) >= amount, 
                 ENotEnoughFundsUnlocked
             );
-            vault.marketing = sub(vault.marketing, amount);
+            vault.marketing = math::sub(vault.marketing, amount);
         };
     }
 
@@ -237,7 +237,7 @@ module mazu_finance::mazu {
         let (tge, vesting, period) = (0, 0, 0);
 
         if (stakeholder == string::utf8(b"community")) {
-            tge = math64::div_down(MAX_COMMUNITY_INCENTIVES, 10);
+            tge = MAX_COMMUNITY_INCENTIVES / 10;
             vesting = MAX_COMMUNITY_INCENTIVES - tge;
             period = 548;
         } else if (stakeholder == string::utf8(b"team")) {
@@ -245,7 +245,7 @@ module mazu_finance::mazu {
             period = 1;
             // vesting managed in vesting module
         } else if (stakeholder == string::utf8(b"strategy")) {
-            tge = math64::div_down(MAX_STRATEGY, 2);
+            tge = MAX_STRATEGY / 2;
             vesting = tge;
             period = 548;
         } else if (stakeholder == string::utf8(b"private_sale")) {
@@ -257,7 +257,7 @@ module mazu_finance::mazu {
             period = 1;
             // vesting = 0
         } else if (stakeholder == string::utf8(b"marketing")) {
-            tge = math64::div_down(MAX_MARKETING, 4);
+            tge = MAX_MARKETING / 4;
             vesting = MAX_MARKETING - tge;
             period = 548;
         };
@@ -266,10 +266,6 @@ module mazu_finance::mazu {
     }
 
     // === Private functions ===
-
-    fun sub(x: u64, y: u64): u64 {
-        if (x > y) x - y else 0
-    }
 
     fun assert_in_vault(name: String) {
         assert!(

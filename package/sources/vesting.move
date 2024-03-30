@@ -8,7 +8,7 @@ module mazu_finance::vesting {
 
     use mazu_finance::mazu::{Self, MAZU, Vault};
     use mazu_finance::multisig::{Self, Multisig, Proposal};
-    use mazu_finance::math64;
+    use mazu_finance::math;
 
     const ENotEnoughUnlocked: u64 = 0;
     const EUnknownStakeholder: u64 = 1;
@@ -40,7 +40,7 @@ module mazu_finance::vesting {
 
     public fun unlock(locked: &mut Locked<MAZU>, amount: u64, ctx: &mut TxContext): Coin<MAZU> {
         let schedule_epoch = tx_context::epoch(ctx) - locked.start;
-        let total_unlocked = math64::mul_div_down(locked.allocation, schedule_epoch, locked.end - locked.start);
+        let total_unlocked = math::mul_div_down(locked.allocation, schedule_epoch, locked.end - locked.start);
         let claimed = sub(locked.allocation, coin::value(&locked.coins));
         assert!(amount <= sub(total_unlocked, claimed), ENotEnoughUnlocked);
                 
@@ -98,7 +98,7 @@ module mazu_finance::vesting {
             mazu::handle_stakeholder(vault, request.stakeholder, amount, ctx);
 
             if (request.stakeholder == string::utf8(b"private_sale")) {
-                let unlocked_amount = math64::div_down(amount, 5);
+                let unlocked_amount = amount / 5;
                 let coins = coin::mint(mazu::cap_mut(vault), unlocked_amount, ctx);
                 transfer::public_transfer(coins, addr);
 
