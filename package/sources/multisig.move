@@ -1,4 +1,5 @@
 module mazu_finance::multisig {
+    use std::debug::print;
     use std::string::String;
     use std::vector;
     use sui::transfer;
@@ -8,23 +9,22 @@ module mazu_finance::multisig {
     use sui::vec_map::{Self, VecMap};
     use sui::dynamic_field as df;
 
+    use mazu_finance::math;
+
     // === Errors ===
 
-    const ENotAMember: u64 = 0;
+    const ENotMember: u64 = 0;
     const EThresholdTooHigh: u64 = 1;
     const EThresholdNotReached: u64 = 2;
+    const EProposalNotEmpty: u64 = 3;
 
     // === Structs ===
-
-    // Requests
 
     struct ModifyMultisigRequest has store { 
         is_add: bool, // if true, add members, if false, remove members
         threshold: u64,
         addresses: vector<address>
     }
-
-    // Multisig structs
 
     struct ProposalKey has copy, drop, store {}
 
@@ -59,16 +59,15 @@ module mazu_finance::multisig {
     // === Public functions ===
 
     public fun clean_proposals(multisig: &mut Multisig, ctx: &mut TxContext) {
-        let size = vec_map::size(&multisig.proposals);
-        let i = 0;
-        while (i < size) {
-            let (name, proposal) = vec_map::get_entry_by_idx(&multisig.proposals, i);
-            if (tx_context::epoch(ctx) - proposal.epoch > 7) {
+        let i = vec_map::size(&multisig.proposals);
+        while (i > 0) {
+            let (name, proposal) = vec_map::get_entry_by_idx(&multisig.proposals, i - 1);
+            if (tx_context::epoch(ctx) - proposal.epoch >= 7) {
                 let (_, proposal_obj) = vec_map::remove(&mut multisig.proposals, &*name);
                 let Proposal { id, approved: _, epoch: _ } = proposal_obj;
                 object::delete(id);
             };
-            i = i + 1;
+            i = i - 1;
         } 
     }
 
@@ -92,7 +91,7 @@ module mazu_finance::multisig {
         };
         assert!(new_addr_len >= threshold, EThresholdTooHigh);
         let request = ModifyMultisigRequest { is_add, threshold, addresses };
-        create_proposal(name, request, multisig, ctx);
+        create_proposal(multisig, name, request, ctx);
     }
 
     // step 2: multiple members have to approve the proposal
@@ -133,9 +132,9 @@ module mazu_finance::multisig {
     // core functions
 
     public fun create_proposal<Request: store>(
+        multisig: &mut Multisig, 
         name: String, 
         request: Request, 
-        multisig: &mut Multisig, 
         ctx: &mut TxContext
     ) {
         assert_is_member(multisig, ctx);
@@ -149,6 +148,20 @@ module mazu_finance::multisig {
         df::add(&mut proposal.id, ProposalKey {}, request);
 
         vec_map::insert(&mut multisig.proposals, name, proposal);
+    }
+
+    public fun delete_proposal(
+        multisig: &mut Multisig, 
+        name: String, 
+        ctx: &mut TxContext
+    ) {
+        assert_is_member(multisig, ctx);
+
+        let (_, proposal_obj) = vec_map::remove(&mut multisig.proposals, &name);
+        assert!(vec_set::size(&proposal_obj.approved) == 0, EProposalNotEmpty);
+        
+        let Proposal { id, approved: _, epoch: _ } = proposal_obj;
+        object::delete(id);
     }
 
     public fun approve_proposal(
@@ -198,7 +211,7 @@ module mazu_finance::multisig {
     fun assert_is_member(multisig: &Multisig, ctx: &TxContext) {
         assert!(
             vec_set::contains(&multisig.members, &tx_context::sender(ctx)), 
-            ENotAMember
+            ENotMember
         );
     }
 
@@ -207,6 +220,18 @@ module mazu_finance::multisig {
     #[test_only]
     public fun init_for_testing(ctx: &mut TxContext) {
         init(ctx);
+    }
+
+    #[test_only]
+    public fun assert_multisig_data(
+        multisig: &mut Multisig,
+        threshold: u64,
+        members: u64,
+        proposals: u64,
+    ) {
+        assert!(multisig.threshold == threshold, 0);
+        assert!(vec_set::size(&multisig.members) == members, 0);
+        assert!(vec_map::size(&multisig.proposals) == proposals, 0);
     }
 }
 

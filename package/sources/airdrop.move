@@ -60,7 +60,7 @@ module mazu_finance::airdrop {
         ctx: &mut TxContext
     ) {
         let request = Request {};
-        multisig::create_proposal(name, request, multisig, ctx);
+        multisig::create_proposal(multisig, name, request, ctx);
     }
 
     // step 2: multiple members have to approve the proposal

@@ -200,7 +200,7 @@ module mazu_finance::staking {
         name: String,
         ctx: &mut TxContext
     ) {
-        multisig::create_proposal(name, StartRequest {}, multisig, ctx);
+        multisig::create_proposal(multisig, name, StartRequest {}, ctx);
     }
 
     // step 2: multiple members have to approve the proposal

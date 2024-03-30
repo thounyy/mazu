@@ -41,8 +41,8 @@ module mazu_finance::vesting {
     public fun unlock(locked: &mut Locked<MAZU>, amount: u64, ctx: &mut TxContext): Coin<MAZU> {
         let schedule_epoch = tx_context::epoch(ctx) - locked.start;
         let total_unlocked = math::mul_div_down(locked.allocation, schedule_epoch, locked.end - locked.start);
-        let claimed = sub(locked.allocation, coin::value(&locked.coins));
-        assert!(amount <= sub(total_unlocked, claimed), ENotEnoughUnlocked);
+        let claimed = math::sub(locked.allocation, coin::value(&locked.coins));
+        assert!(amount <= math::sub(total_unlocked, claimed), ENotEnoughUnlocked);
                 
         coin::split(&mut locked.coins, amount, ctx)
     }
@@ -73,7 +73,7 @@ module mazu_finance::vesting {
         assert!(vector::length(&amounts) == vector::length(&addresses), EWrongProposal);
 
         let request = Request { stakeholder, amounts, addresses };
-        multisig::create_proposal(name, request, multisig, ctx);
+        multisig::create_proposal(multisig, name, request, ctx);
     }
 
     // step 2: multiple members have to approve the proposal
@@ -102,7 +102,7 @@ module mazu_finance::vesting {
                 let coins = coin::mint(mazu::cap_mut(vault), unlocked_amount, ctx);
                 transfer::public_transfer(coins, addr);
 
-                amount = sub(amount, unlocked_amount);
+                amount = math::sub(amount, unlocked_amount);
             };
             
             transfer::transfer(
@@ -124,10 +124,6 @@ module mazu_finance::vesting {
     }
 
     // === Private functions ===
-
-    fun sub(x: u64, y: u64): u64 {
-        if (x > y) x - y else 0
-    }
 
     // === Test functions ===
 

@@ -89,7 +89,13 @@ module mazu_finance::mazu_tests{
         mazu::complete_update_metadata(&mut stor.vault, &mut stor.metadata, request);
     }
 
-    fun transfer(scen: &mut Scenario, stor: &mut Storage, stakeholder: vector<u8>, addr: address, amount: u64) {
+    fun transfer(
+        scen: &mut Scenario, 
+        stor: &mut Storage, 
+        stakeholder: vector<u8>, 
+        addr: address, 
+        amount: u64
+    ) {
         let name = string::utf8(b"transfer");
         mazu::propose_transfer(
             &mut stor.multisig, 

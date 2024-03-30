@@ -1,9 +1,7 @@
 #[test_only]
 module mazu_finance::vesting_tests{
-    use std::debug::print;
     use std::string;
     use std::vector;
-    use sui::test_utils as tu;
     use sui::test_scenario::{Self as ts, Scenario};
     use sui::coin::{Self, Coin};
     use sui::transfer;

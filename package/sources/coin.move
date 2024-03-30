@@ -1,4 +1,5 @@
 module mazu_finance::mazu {
+            use std::debug::print;
     use std::option;
     use std::string::{Self, String};
     use sui::coin::{Self, Coin, TreasuryCap, CoinMetadata};
@@ -113,7 +114,7 @@ module mazu_finance::mazu {
     ) {
         assert_in_vault(stakeholder);
         let request = TransferRequest { stakeholder, amount, recipient };
-        multisig::create_proposal(name, request, multisig, ctx);
+        multisig::create_proposal(multisig, name, request, ctx);
     }
 
     // step 2: multiple members have to approve the proposal
@@ -148,7 +149,7 @@ module mazu_finance::mazu {
         ctx: &mut TxContext
     ) {
         let request = UpdateMetadataRequest { name, symbol, description, icon_url };
-        multisig::create_proposal(proposal_name, request, multisig, ctx);
+        multisig::create_proposal(multisig, proposal_name, request, ctx);
     }
 
     // step 2: multiple members have to approve the proposal
