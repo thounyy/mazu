@@ -19,7 +19,14 @@
     "transfer": "bun ./src/coin/transfer.ts",
     "metadata": "bun ./src/coin/metadata.ts",
     "vesting": "bun ./src/vesting/vesting.ts",
-    "unlock": "bun ./src/vesting/unlock.ts"
+    "unlock": "bun ./src/vesting/unlock.ts",
+    "modify": "bun ./src/multisig/modify.ts",
+    "propose": "bun ./src/multisig/propose.ts",
+    "delete": "bun ./src/multisig/delete.ts",
+    "approve": "bun ./src/multisig/approve.ts",
+    "remove": "bun ./src/multisig/remove.ts",
+    "execute": "bun ./src/multisig/execute.ts",
+    "clean": "bun ./src/multisig/clean.ts"
   },
   "dependencies": {
     "@mysten/sui.js": "^0.49.1",

@@ -76,7 +76,7 @@ module mazu_finance::multisig {
     // multisig management ===
 
     // step 1: propose to modify multisig params
-    public fun propose_modify_multisig(
+    public fun propose_modify(
         multisig: &mut Multisig, 
         name: String,
         is_add: bool, // is it to add or remove members
@@ -98,12 +98,12 @@ module mazu_finance::multisig {
     // step 3: someone has to execute the proposal to get Proposal
         
     // step 4: unwrap the request by passing Proposal
-    public fun start_modify_multisig(proposal: Proposal): ModifyMultisigRequest {
+    public fun start_modify(proposal: Proposal): ModifyMultisigRequest {
         get_request(proposal)
     }
     
     // step 5: destroy the request and modify Multisig object
-    public fun complete_modify_multisig(
+    public fun complete_modify(
         multisig: &mut Multisig,
         request: ModifyMultisigRequest,
     ) {

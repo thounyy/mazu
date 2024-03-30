@@ -61,7 +61,7 @@ module mazu_finance::multisig_tests{
         addresses: vector<address>
     ) {
         let name = string::utf8(name);
-        multisig::propose_modify_multisig(
+        multisig::propose_modify(
             &mut stor.multisig,
             name,
             is_add,
@@ -71,31 +71,8 @@ module mazu_finance::multisig_tests{
         );
         multisig::approve_proposal(&mut stor.multisig, name, ts::ctx(scen));
         let proposal = multisig::execute_proposal(&mut stor.multisig, name, ts::ctx(scen));
-        let request = multisig::start_modify_multisig(proposal);
-        multisig::complete_modify_multisig(&mut stor.multisig, request);
-    }
-
-    fun transfer(
-        scen: &mut Scenario, 
-        stor: &mut Storage, 
-        name: vector<u8>, 
-        stakeholder: vector<u8>, 
-        addr: address, 
-        amount: u64
-    ) {
-        let name = string::utf8(name);
-        mazu::propose_transfer(
-            &mut stor.multisig, 
-            name, 
-            string::utf8(stakeholder),
-            amount,
-            addr,
-            ts::ctx(scen)
-        );
-        multisig::approve_proposal(&mut stor.multisig, name, ts::ctx(scen));
-        let proposal = multisig::execute_proposal(&mut stor.multisig, name, ts::ctx(scen));
-        let request = mazu::start_transfer(proposal);
-        mazu::complete_transfer(&mut stor.vault, request, ts::ctx(scen));
+        let request = multisig::start_modify(proposal);
+        multisig::complete_modify(&mut stor.multisig, request);
     }
 
     fun increment_epoch(scen: &mut Scenario, epochs: u64) {
@@ -160,7 +137,7 @@ module mazu_finance::multisig_tests{
         let s = forward_scenario(scen, s, OWNER);
 
         let name = string::utf8(b"remove_members");
-        multisig::propose_modify_multisig(
+        multisig::propose_modify(
             &mut s.multisig,
             name,
             false,
@@ -175,8 +152,8 @@ module mazu_finance::multisig_tests{
         let s = forward_scenario(scen, s, BOB);
         multisig::approve_proposal(&mut s.multisig, name, ts::ctx(scen));
         let proposal = multisig::execute_proposal(&mut s.multisig, name, ts::ctx(scen));
-        let request = multisig::start_modify_multisig(proposal);
-        multisig::complete_modify_multisig(&mut s.multisig, request);
+        let request = multisig::start_modify(proposal);
+        multisig::complete_modify(&mut s.multisig, request);
         multisig::assert_multisig_data(&mut s.multisig, 1, 1, 0);
 
         complete_scenario(scenario, s);
@@ -213,7 +190,7 @@ module mazu_finance::multisig_tests{
         let s = forward_scenario(scen, s, OWNER);
 
         let name = string::utf8(b"remove_members");
-        multisig::propose_modify_multisig(
+        multisig::propose_modify(
             &mut s.multisig,
             name,
             false,
@@ -228,8 +205,8 @@ module mazu_finance::multisig_tests{
         let s = forward_scenario(scen, s, BOB);
         multisig::approve_proposal(&mut s.multisig, name, ts::ctx(scen));
         let proposal = multisig::execute_proposal(&mut s.multisig, name, ts::ctx(scen));
-        let request = multisig::start_modify_multisig(proposal);
-        multisig::complete_modify_multisig(&mut s.multisig, request);
+        let request = multisig::start_modify(proposal);
+        multisig::complete_modify(&mut s.multisig, request);
         multisig::assert_multisig_data(&mut s.multisig, 1, 1, 0);
 
         complete_scenario(scenario, s);
@@ -242,7 +219,7 @@ module mazu_finance::multisig_tests{
 
         let s = forward_scenario(scen, s, OWNER);
         let name = string::utf8(b"threshold");
-        multisig::propose_modify_multisig(
+        multisig::propose_modify(
             &mut s.multisig,
             name,
             false,
@@ -264,7 +241,7 @@ module mazu_finance::multisig_tests{
 
         let s = forward_scenario(scen, s, OWNER);
         let name = string::utf8(b"threshold");
-        multisig::propose_modify_multisig(
+        multisig::propose_modify(
             &mut s.multisig,
             name,
             false,
@@ -287,7 +264,7 @@ module mazu_finance::multisig_tests{
         vector::push_back(&mut members, BOB);
 
         // epoch 0
-        multisig::propose_modify_multisig(
+        multisig::propose_modify(
             &mut s.multisig,
             string::utf8(b"threshold"),
             false,
@@ -299,7 +276,7 @@ module mazu_finance::multisig_tests{
         let s = forward_scenario(scen, s, OWNER);
         // epoch 3
         increment_epoch(scen, 3);
-        multisig::propose_modify_multisig(
+        multisig::propose_modify(
             &mut s.multisig,
             string::utf8(b"members"),
             true,
@@ -338,7 +315,7 @@ module mazu_finance::multisig_tests{
         let (scenario, s) = init_scenario();
         let scen = &mut scenario;
 
-        multisig::propose_modify_multisig(
+        multisig::propose_modify(
             &mut s.multisig,
             string::utf8(b"test"),
             false,
@@ -384,7 +361,7 @@ module mazu_finance::multisig_tests{
 
         let s = forward_scenario(scen, s, ALICE);
         let name = string::utf8(b"threshold");
-        multisig::propose_modify_multisig(
+        multisig::propose_modify(
             &mut s.multisig,
             name,
             false,
@@ -394,8 +371,8 @@ module mazu_finance::multisig_tests{
         );
         multisig::approve_proposal(&mut s.multisig, name, ts::ctx(scen));
         let proposal = multisig::execute_proposal(&mut s.multisig, name, ts::ctx(scen));
-        let request = multisig::start_modify_multisig(proposal);
-        multisig::complete_modify_multisig(&mut s.multisig, request);
+        let request = multisig::start_modify(proposal);
+        multisig::complete_modify(&mut s.multisig, request);
 
         complete_scenario(scenario, s);
     }
@@ -408,7 +385,7 @@ module mazu_finance::multisig_tests{
 
         let s = forward_scenario(scen, s, OWNER);
         let name = string::utf8(b"threshold");
-        multisig::propose_modify_multisig(
+        multisig::propose_modify(
             &mut s.multisig,
             name,
             false,
@@ -417,8 +394,8 @@ module mazu_finance::multisig_tests{
             ts::ctx(scen)
         );
         let proposal = multisig::execute_proposal(&mut s.multisig, name, ts::ctx(scen));
-        let request = multisig::start_modify_multisig(proposal);
-        multisig::complete_modify_multisig(&mut s.multisig, request);
+        let request = multisig::start_modify(proposal);
+        multisig::complete_modify(&mut s.multisig, request);
 
         complete_scenario(scenario, s);
     }
@@ -431,7 +408,7 @@ module mazu_finance::multisig_tests{
 
         let s = forward_scenario(scen, s, OWNER);
         let name = string::utf8(b"threshold");
-        multisig::propose_modify_multisig(
+        multisig::propose_modify(
             &mut s.multisig,
             name,
             false,
