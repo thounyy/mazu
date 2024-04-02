@@ -12,9 +12,9 @@ import { client, keypair, getId } from '../utils.js';
 		const [mazu] = tx.moveCall({
 			target: `${packageId}::airdrop::claim`,
 			arguments: [
-				tx.object("0xfa9c02c85217a3176ed422ca74e1c4457573da2634c7601b0d78493b386737d2"), 
+				tx.object("0x9111d3d896fc8652547b9ecf53ce0dfb7e4486436a7bc7ab9d4fc8e60cf7d0c5"), 
 				tx.object(getId("airdrop::Airdrop")), 
-				tx.pure(getId("mazu::Vault")),
+				tx.object(getId("mazu::Vault")),
 			],
 		});
 

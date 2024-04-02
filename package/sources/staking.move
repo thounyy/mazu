@@ -54,7 +54,8 @@ module mazu_finance::staking {
     }
 
     struct Pool has store {
-        total_staked: u64, // total value (not amount) staked
+        total_value: u64, // total value (amount * boost) staked
+        total_staked: u64, // total amount staked
         supply_left: u64,
         emissions: vector<u64>, // per week
         reward_index: u64,
@@ -81,6 +82,7 @@ module mazu_finance::staking {
             &mut staking.id, 
             PoolKey<MAZU> {}, 
             Pool {
+                total_value: 0,
                 total_staked: 0,
                 supply_left: MAX_MAZU_POOL,
                 emissions: init_mazu_emissions(),
@@ -92,6 +94,7 @@ module mazu_finance::staking {
             &mut staking.id, 
             PoolKey<LP<MAZU,SUI>> {}, 
             Pool {
+                total_value: 0,
                 total_staked: 0,
                 supply_left: MAX_LP_POOL,
                 emissions: init_lp_emissions(),
@@ -121,7 +124,8 @@ module mazu_finance::staking {
         let value = math::mul_div_down(coin::value(&coin), get_boost(weeks), MUL);
         
         update_rewards(pool, now, staking.start);
-        pool.total_staked = pool.total_staked + value;
+        pool.total_value = pool.total_value + value;
+        pool.total_staked = pool.total_staked + coin::value(&coin);
 
         Staked<T> {
             id: object::new(ctx),
@@ -175,7 +179,8 @@ module mazu_finance::staking {
         // get rewards
         let rewards = math::sub(pool.reward_index, reward_index) * value;
         
-        pool.total_staked = math::sub(pool.total_staked, value);
+        pool.total_value = math::sub(pool.total_value, value);
+        pool.total_staked = math::sub(pool.total_staked, coin::value(&coin));
         // return both staked coin and rewards
         let mazu = coin::mint(mazu::cap_mut(vault), rewards, ctx);
         (coin, mazu)
@@ -230,9 +235,9 @@ module mazu_finance::staking {
         now: u64,
         start: u64,
     ) {
-        if (pool.total_staked == 0) return;
+        if (pool.total_value == 0) return;
         
-        let claimable_reward_index = get_emitted(pool, start, now) / pool.total_staked;
+        let claimable_reward_index = get_emitted(pool, start, now) / pool.total_value;
         
         pool.reward_index = claimable_reward_index + pool.reward_index;
         pool.last_updated = now;
@@ -452,19 +457,19 @@ module mazu_finance::staking {
     public fun print_pool_data<T: drop>(staking: &mut Staking): (u64, u64, u64, u64) {
         let pool = df::borrow<PoolKey<T>, Pool>(&mut staking.id, PoolKey<T> {});
         
-        (pool.total_staked, pool.supply_left, pool.reward_index, pool.last_updated)
+        (pool.total_value, pool.supply_left, pool.reward_index, pool.last_updated)
     }
 
     #[test_only]
     public fun assert_pool_data<T: drop>(
         staking: &mut Staking,
-        total_staked: u64,
+        total_value: u64,
         supply_left: u64,
         reward_index: u64,
         last_updated: u64,
     ) {
         let pool = df::borrow<PoolKey<T>, Pool>(&mut staking.id, PoolKey<T> {});
-        assert!(total_staked == pool.total_staked, 100);
+        assert!(total_value == pool.total_value, 100);
         assert!(supply_left == pool.supply_left, 101);
         assert!(reward_index == pool.reward_index, 102);
         assert!(last_updated == pool.last_updated, 103);

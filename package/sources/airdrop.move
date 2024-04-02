@@ -74,16 +74,11 @@ module mazu_finance::airdrop {
     // step 5: create (and send via PTB) as many airdroplist as needed (according to max)
     public fun drop(
         _: &Request, 
-        // airdrop: &mut Airdrop, 
         amount: u64, 
         recipients: vector<address>, 
         ctx: &mut TxContext
     ) {
-        // assert!(airdrop.to_distribute + amount >= 0, ENoMoreCoinsToAirdrop);
-
-        while (vector::length(&recipients) != 0) {
-            // airdrop.to_distribute = airdrop.to_distribute - amount;
-    
+        while (vector::length(&recipients) != 0) {    
             transfer::public_transfer(
                 Ticket { id: object::new(ctx), amount }, 
                 vector::pop_back(&mut recipients)

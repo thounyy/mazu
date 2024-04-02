@@ -75,8 +75,6 @@ module mazu_finance::mazu {
             ctx
         );
 
-        coin::mint_and_transfer(&mut cap, 100000000000000, tx_context::sender(ctx), ctx);
-
         transfer::public_share_object(metadata);
         
         transfer::share_object(Vault {

@@ -44,17 +44,16 @@ import { client, keypair, getId } from '../utils.js';
 			]
 		});
 
-		for (let i = 0; i < 20; i++) {
+		// for (let i = 0; i < 20; i++) {
 			tx.moveCall({
 				target: `${packageId}::airdrop::drop`,
 				arguments: [
 					tx.object(request),
-					tx.object(getId("airdrop::Airdrop")),
-					tx.pure(1),
+					tx.pure(1000000000000000),
 					tx.pure(addresses)
 				]
 			});
-		}
+		// }
 
 		tx.moveCall({
 			target: `${packageId}::airdrop::complete`,
