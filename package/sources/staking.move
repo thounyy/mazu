@@ -19,8 +19,6 @@ module mazu_finance::staking {
 
     const MUL: u64 = 1_000_000_000;
     const MS_IN_WEEK: u64 = 1000 * 60 * 60 * 24 * 7;
-    const MAX_MAZU_POOL: u64 = 44_444_444_444_444_444; // 5% max supply
-    const MAX_LP_POOL: u64 = 213_333_333_333_333_300; // 24% max supply
 
     // === Errors ===
 
@@ -56,7 +54,6 @@ module mazu_finance::staking {
     struct Pool has store {
         total_value: u64, // total value (amount * boost) staked
         total_staked: u64, // total amount staked
-        supply_left: u64,
         emissions: vector<u64>, // per week
         reward_index: u64,
         last_updated: u64
@@ -84,7 +81,6 @@ module mazu_finance::staking {
             Pool {
                 total_value: 0,
                 total_staked: 0,
-                supply_left: MAX_MAZU_POOL,
                 emissions: init_mazu_emissions(),
                 reward_index: 0,
                 last_updated: 0
@@ -96,7 +92,6 @@ module mazu_finance::staking {
             Pool {
                 total_value: 0,
                 total_staked: 0,
-                supply_left: MAX_LP_POOL,
                 emissions: init_lp_emissions(),
                 reward_index: 0,
                 last_updated: 0
@@ -151,7 +146,6 @@ module mazu_finance::staking {
         // get rewards
         let rewards = math::sub(pool.reward_index, staked.reward_index) * staked.value;
         staked.reward_index = pool.reward_index;
-        pool.supply_left = math::sub(pool.supply_left, rewards);
         coin::mint(mazu::cap_mut(vault), rewards, ctx)
     }
 
@@ -454,28 +448,6 @@ module mazu_finance::staking {
     }
 
     #[test_only]
-    public fun print_pool_data<T: drop>(staking: &mut Staking): (u64, u64, u64, u64) {
-        let pool = df::borrow<PoolKey<T>, Pool>(&mut staking.id, PoolKey<T> {});
-        
-        (pool.total_value, pool.supply_left, pool.reward_index, pool.last_updated)
-    }
-
-    #[test_only]
-    public fun assert_pool_data<T: drop>(
-        staking: &mut Staking,
-        total_value: u64,
-        supply_left: u64,
-        reward_index: u64,
-        last_updated: u64,
-    ) {
-        let pool = df::borrow<PoolKey<T>, Pool>(&mut staking.id, PoolKey<T> {});
-        assert!(total_value == pool.total_value, 100);
-        assert!(supply_left == pool.supply_left, 101);
-        assert!(reward_index == pool.reward_index, 102);
-        assert!(last_updated == pool.last_updated, 103);
-    }
-
-    #[test_only]
     public fun assert_staked_data<T: drop>(
         staked: &Staked<T>,
         end: u64,
@@ -487,16 +459,6 @@ module mazu_finance::staking {
         assert!(value == staked.value, 106);
         assert!(reward_index == staked.reward_index, 107);
         assert!(coin == coin::value(&staked.coin), 108);
-    }
-
-    #[test_only]
-    public fun get_reward_index<T: drop>(
-        staking: &mut Staking, 
-        clock: &Clock,
-    ): u64 {
-        let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
-        update_rewards(pool, clock::timestamp_ms(clock), staking.start);
-        pool.reward_index
     }
 }
 

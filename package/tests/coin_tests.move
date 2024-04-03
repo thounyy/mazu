@@ -146,6 +146,17 @@ module mazu_finance::mazu_tests{
     }
 
     #[test]
+    fun should_burn() {
+        let (scenario, s) = init_scenario();
+        let scen = &mut scenario;
+        transfer(scen, &mut s, b"public_sale", PUBLIC_SALE, 1);   
+        let s = forward_scenario(scen, s, PUBLIC_SALE);
+        let mazu = ts::take_from_address<Coin<MAZU>>(scen, PUBLIC_SALE);
+        mazu::burn(&mut s.vault, mazu);
+        complete_scenario(scenario, s);
+    }
+
+    #[test]
     fun transfer_everything_normal() {
         let (scenario, s) = init_scenario();
         let scen = &mut scenario;

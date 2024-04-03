@@ -111,14 +111,6 @@ module mazu_finance::staking_tests{
     }
 
     #[test]
-    fun should_burn() {
-        let (scenario, storage) = init_scenario();
-        let mazu = mazu(100, &mut scenario);
-        mazu::burn(&mut storage.vault, mazu);
-        complete_scenario(scenario, storage);
-    }
-
-    #[test]
     #[expected_failure(abort_code = mazu_finance::staking::ENotActive)]
     fun cannot_stake_before_start() {
         let (scenario, storage) = init_scenario();
