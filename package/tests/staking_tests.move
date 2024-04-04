@@ -13,6 +13,7 @@ module mazu_finance::staking_tests{
     use mazu_finance::multisig::{Self, Multisig};
 
     const MS_IN_WEEK: u64 = 1000 * 60 * 60 * 24 * 7;
+    const MUL: u128 = 1_000_000_000;
 
     const OWNER: address = @0xBABE;
     const ALICE: address = @0xCAFE;
@@ -89,16 +90,13 @@ module mazu_finance::staking_tests{
         staking::complete_start(&stor.clock, &mut stor.staking, request);
     }
 
-    fun compute_reward_index(reward_index: u64, duration: u64, total: u64): u64 {
-        reward_index + 
-        (
-            (
-                (2666666670000000 as u128) * 
-                (duration as u128) / 
-                (MS_IN_WEEK as u128) / 
-                (total as u128)
-            ) 
-            as u64
+    fun compute_reward_index(reward_index: u128, duration: u64, total: u64): u128 {        
+        reward_index + (
+            (2666666670000000 as u128) * 
+            (duration as u128) / 
+            (MS_IN_WEEK as u128) * 
+            (MUL as u128) /
+            (total as u128)
         )
     }
 
@@ -284,33 +282,33 @@ module mazu_finance::staking_tests{
         let scen = &mut scenario;
         let (staking, vault, clock) = (&mut storage.staking, &mut storage.vault, &mut storage.clock);
         // boost 8 weeks
-        let reward_index = 0;
+        let reward_index: u128 = 0;
         let staked = staking::stake(staking, mazu(100, scen), clock, 8, ts::ctx(scen));
         staking::assert_staked_data(&staked, MS_IN_WEEK * 8, 200, reward_index, 100);
         clock::increment_for_testing(clock, MS_IN_WEEK * 8);
         let (deposit, rewards1) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
         assert!(coin::value(&rewards1) == 12800000000000000, 0);
         // boost 12 weeks
-        let reward_index = reward_index + 12800000000000000 / 200;
+        let reward_index = reward_index + 12800000000000000 * MUL / 200;
         let staked = staking::stake(staking, deposit, clock, 12, ts::ctx(scen));
         staking::assert_staked_data(&staked, MS_IN_WEEK * 20, 300, reward_index, 100);
         clock::increment_for_testing(clock, MS_IN_WEEK * 12);
         let (deposit, rewards2) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
-        assert!(coin::value(&rewards2) == 9555555579999900, 0);
+        assert!(coin::value(&rewards2) == 9555555579999999, 0);
         // boost 16 weeks
-        let reward_index = reward_index + 9555555579999900 / 300;
+        let reward_index = reward_index + 9555555580000000 * MUL / 300;
         let staked = staking::stake(staking, deposit, clock, 16, ts::ctx(scen));
         staking::assert_staked_data(&staked, MS_IN_WEEK * 36, 500, reward_index, 100);
         clock::increment_for_testing(clock, MS_IN_WEEK * 16);
         let (deposit, rewards3) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
         assert!(coin::value(&rewards3) == 8444444420000000, 0);
         // boost 20 weeks
-        let reward_index = reward_index + 8444444420000000 / 500;
+        let reward_index = reward_index + 8444444420000000 * MUL / 500;
         let staked = staking::stake(staking, deposit, clock, 20, ts::ctx(scen));
         staking::assert_staked_data(&staked, MS_IN_WEEK * 56, 900, reward_index, 100);
         clock::increment_for_testing(clock, MS_IN_WEEK * 20);
         let (deposit, rewards4) = staking::unstake(vault, staking, staked, clock, ts::ctx(scen));
-        assert!(coin::value(&rewards4) == 7955555559999300, 0);
+        assert!(coin::value(&rewards4) == 7955555559999999, 0);
 
         transfer::public_transfer(deposit, ALICE);
         transfer::public_transfer(rewards1, ALICE);
@@ -325,7 +323,7 @@ module mazu_finance::staking_tests{
         let (scenario, s) = init_scenario();
         let scen = &mut scenario;
         // deployment
-        clock::increment_for_testing(&mut s.clock, 10_000_000_000_000);
+        clock::increment_for_testing(&mut s.clock, 1_000_000_000_000);
         start_staking(scen, &mut s);
         let reward_index = 0;
         let s = forward_scenario(scen, s, OWNER);
@@ -335,7 +333,7 @@ module mazu_finance::staking_tests{
         clock::increment_for_testing(&mut s.clock, 1000);
         let alice_staked = staking::stake(&mut s.staking, mazu(alice_amount, scen), &mut s.clock, 0, ts::ctx(scen));
         // reward_index = reward_index + (2666666670000000 * 1000 / MS_IN_WEEK / 0); return 0 here
-        staking::assert_staked_data(&alice_staked, 10000000001000, alice_amount, 0, alice_amount); // reward_index = 0 because no value when alice staked
+        staking::assert_staked_data(&alice_staked, 1000000001000, alice_amount, 0, alice_amount); // reward_index = 0 because no value when alice staked
         let s = forward_scenario(scen, s, ALICE);
 
         // bob stakes
@@ -343,7 +341,7 @@ module mazu_finance::staking_tests{
         clock::increment_for_testing(&mut s.clock, 3000);
         reward_index = compute_reward_index(reward_index, 4000, 100);
         let bob_staked = staking::stake(&mut s.staking, mazu(bob_amount1, scen), &mut s.clock, 0, ts::ctx(scen));
-        staking::assert_staked_data(&bob_staked, 10000000004000, bob_amount1, reward_index, bob_amount1);
+        staking::assert_staked_data(&bob_staked, 1000000004000, bob_amount1, reward_index, bob_amount1);
         let s = forward_scenario(scen, s, BOB);
         
         // bob claims
@@ -351,15 +349,15 @@ module mazu_finance::staking_tests{
         reward_index = compute_reward_index(reward_index, 7000, 1100);
         let theoretical_rewards = staking::calculate_rewards(&mut s.staking, &mut bob_staked, &mut s.clock);
         let bob_claim = staking::claim(&mut s.vault, &mut s.staking, &mut bob_staked, &mut s.clock, ts::ctx(scen));
-        staking::assert_staked_data(&bob_staked, 10000000004000, bob_amount1, reward_index, bob_amount1);
+        staking::assert_staked_data(&bob_staked, 1000000004000, bob_amount1, reward_index, bob_amount1);
         assert!(coin::value(&bob_claim) == theoretical_rewards, 5);
 
         // bob stakes 2
         let bob_amount2 = 10000;
-        clock::increment_for_testing(&mut s.clock, 10000);
-        reward_index = compute_reward_index(reward_index, 10000, 1100);
+        clock::increment_for_testing(&mut s.clock, 9000);
+        reward_index = compute_reward_index(reward_index, 9000, 1100);
         let bob_staked2 = staking::stake(&mut s.staking, mazu(bob_amount2, scen), &mut s.clock, 0, ts::ctx(scen));
-        staking::assert_staked_data(&bob_staked2, 10000000021000, bob_amount2, reward_index, bob_amount2);
+        staking::assert_staked_data(&bob_staked2, 1000000020000, bob_amount2, reward_index, bob_amount2);
         let s = forward_scenario(scen, s, BOB);
         
         // alice unstakes

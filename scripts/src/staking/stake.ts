@@ -10,7 +10,7 @@ import { client, keypair, getId } from '../utils.js';
 		const packageId = getId("package_id");
 
 		const [coin] = tx.splitCoins(tx.object(
-			"0xb1e548c96820dc6dbe7422f7ed934a01da0c700d6f4e0d7f5f6810bd396f7b96"
+			"0x483b027d97cc4117530009694452ac0a7b5339daa9cadfa9ce09d54930cb7f15"
 		), [10]);
 		
 		const [staked] = tx.moveCall({

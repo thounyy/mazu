@@ -3,9 +3,6 @@ import { client, keypair, getId } from '../utils.js';
 
 
 (async () => {
-	const addresses = [
-		"0x67fa77f2640ca7e0141648bf008e13945263efad6dc429303ad49c740e2084a9",
-	]
 	try {
 		console.log("calling...")
 
@@ -19,10 +16,10 @@ import { client, keypair, getId } from '../utils.js';
 				tx.object(getId("multisig::Multisig")), 
 				tx.pure("vesting"), // proposal name / human-readable id
 				tx.pure("team"), // "team" or "private_sale"
-				tx.pure([1,2]), // vector of amounts to send
+				tx.pure([10000000000000000]), // vector of amounts to send
 				tx.pure([
-					"0x67fa77f2640ca7e0141648bf008e13945263efad6dc429303ad49c740e2084a9",
-					"0x67fa77f2640ca7e0141648bf008e13945263efad6dc429303ad49c740e2084a9"
+					// "0x67fa77f2640ca7e0141648bf008e13945263efad6dc429303ad49c740e2084a9",
+					"0xdc2dbdf749bcf228a97339020607110baf45248ccc3e7671edd3e3c866a75717",
 				]) // vector of addresses to be sent to
 			]
 		});

@@ -8,9 +8,10 @@ import { client, keypair, getId } from './utils.js';
 		const tx = new TransactionBlock();
 
 		const [coin] = tx.splitCoins(tx.object(
-			"0xb1e548c96820dc6dbe7422f7ed934a01da0c700d6f4e0d7f5f6810bd396f7b96"
+			"0x483b027d97cc4117530009694452ac0a7b5339daa9cadfa9ce09d54930cb7f15"
 		), [1000000000000]);
 
+		// tx.transferObjects([coin], "0x1637a9f83c62d24f4d4e299ad492e2032fa1e17bcc4086796175e72b9b8d2666");
 		tx.transferObjects([coin], "0xdc2dbdf749bcf228a97339020607110baf45248ccc3e7671edd3e3c866a75717");
 
 		tx.setGasBudget(10000000);

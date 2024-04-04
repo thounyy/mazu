@@ -8,6 +8,10 @@ module mazu_finance::math {
         if (x > y) x - y else 0
     }
 
+    public fun sub_u128(x: u128, y: u128): u128 {
+        if (x > y) x - y else 0
+    }
+
     public fun mul_div_down(x: u64, y: u64, z: u64): u64 {
         (((x as u256) * (y as u256) / (z as u256)) as u64)
     }

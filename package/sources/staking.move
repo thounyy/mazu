@@ -1,6 +1,6 @@
 module mazu_finance::staking {
     use std::vector;
-    use std::string::String;
+    use std::string::{Self, String};
     use sui::coin::{Self, Coin};
     use sui::sui::SUI;
     use sui::transfer;
@@ -46,7 +46,7 @@ module mazu_finance::staking {
         total_value: u64, // total value (amount * boost) staked
         total_staked: u64, // total amount staked
         emissions: vector<u64>, // per week
-        reward_index: u64,
+        reward_index: u128,
         last_updated: u64
     }
 
@@ -55,7 +55,7 @@ module mazu_finance::staking {
         id: UID,
         end: u64, // end timestamp in ms (same if no lock)
         value: u64, // coin_amount * boost
-        reward_index: u64, // reward index when updated
+        reward_index: u128, // reward index when updated
         coin: Coin<T>, // MAZU or LP<MAZU,SUI>
     }
 
@@ -108,7 +108,7 @@ module mazu_finance::staking {
         let now = clock::timestamp_ms(clock);
         let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
         let value = math::mul_div_down(coin::value(&coin), get_boost(weeks), MUL);
-        
+
         update_rewards(pool, now, staking.start);
         pool.total_value = pool.total_value + value;
         pool.total_staked = pool.total_staked + coin::value(&coin);
@@ -135,7 +135,11 @@ module mazu_finance::staking {
         // update global and user indexes
         update_rewards(pool, now, staking.start);
         // get rewards
-        let rewards = math::sub(pool.reward_index, staked.reward_index) * staked.value;
+        let rewards =
+            (math::sub_u128(pool.reward_index, staked.reward_index) *
+            (staked.value as u128) / 
+            (MUL as u128) as u64);
+        
         staked.reward_index = pool.reward_index;
         coin::mint(mazu::cap_mut(vault), rewards, ctx)
     }
@@ -162,7 +166,10 @@ module mazu_finance::staking {
         // update global and user indexes
         update_rewards(pool, now, staking.start);
         // get rewards
-        let rewards = math::sub(pool.reward_index, reward_index) * value;
+        let rewards =
+            (math::sub_u128(pool.reward_index, reward_index) *
+            (value as u128) / 
+            (MUL as u128) as u64);
         
         pool.total_value = math::sub(pool.total_value, value);
         pool.total_staked = math::sub(pool.total_staked, coin::value(&coin));
@@ -178,7 +185,11 @@ module mazu_finance::staking {
     ): u64 {
         let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
         update_rewards(pool, clock::timestamp_ms(clock), staking.start);
-        let rewards = math::sub(pool.reward_index, staked.reward_index) * staked.value;
+        let rewards = math::mul_div_down(
+            (math::sub_u128(pool.reward_index, staked.reward_index) as u64), 
+            staked.value, 
+            MUL
+        );        
         rewards
     }
 
@@ -221,8 +232,11 @@ module mazu_finance::staking {
         start: u64,
     ) {
         if (pool.total_value == 0) return;
-        
-        let claimable_reward_index = get_emitted(pool, start, now) / pool.total_value;
+
+        let claimable_reward_index = 
+            (get_emitted(pool, start, now) as u128) * 
+            (MUL as u128) / 
+            (pool.total_value as u128);
         
         pool.reward_index = claimable_reward_index + pool.reward_index;
         pool.last_updated = now;
@@ -253,7 +267,7 @@ module mazu_finance::staking {
             };
             i = i + 1;
         };
-
+        
         emitted
     }
 
@@ -443,7 +457,7 @@ module mazu_finance::staking {
         staked: &Staked<T>,
         end: u64,
         value: u64,
-        reward_index: u64,
+        reward_index: u128,
         coin: u64,
     ) {
         assert!(end == staked.end, 105);

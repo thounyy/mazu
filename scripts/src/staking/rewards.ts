@@ -54,7 +54,7 @@ function getEmitted(pool: any, start: number, currentTime: number): number {
                 "0x0000000000000000000000000000000000000000000000000000000000000006", // clock
                 `${getId("staking::Staking")}`,
                 `${getId(`dynamic_field::Field<${packageId}::staking::PoolKey<${packageId}::mazu::MAZU>`)}`, // MAZU Pool object
-                "0x38bc44e3d097a599acdfd14875a2a1783503ddf07f63f88c30e770c93ed6ca75", // staked object
+                "0x6f9d38226ba98b50eb37b4d85f0bc544e6225339f1ed4a04fefb71c1bc095abd", // staked object
             ],
             options: {
                 showContent: true,
@@ -80,8 +80,8 @@ function getEmitted(pool: any, start: number, currentTime: number): number {
             coin: sfields.coin
         };
 
-        const globalRewardIndex = getEmitted(pool, start, current_time) / pool.total_value + pool.reward_index;
-        const claimableRewardsForUser = Math.floor((globalRewardIndex - staked.reward_index) * staked.value);
+        const globalRewardIndex = getEmitted(pool, start, current_time) * 1000000000 / pool.total_value + pool.reward_index;
+        const claimableRewardsForUser = Math.floor(Math.floor(globalRewardIndex - staked.reward_index) * staked.value / 1000000000);
 
         console.log(claimableRewardsForUser);
 
