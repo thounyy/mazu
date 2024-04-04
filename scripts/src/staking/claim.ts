@@ -14,7 +14,7 @@ import { client, keypair, getId } from '../utils.js';
 			arguments: [
 				tx.object(getId("mazu::Vault")), 
 				tx.object(getId("staking::Staking")), 
-				tx.pure("0x53cb84115ac75488be5afaec67e35f83d9c8499481b8c22c651dba56bfa210ea"), // the Staked object
+				tx.pure("0x38bc44e3d097a599acdfd14875a2a1783503ddf07f63f88c30e770c93ed6ca75"), // the Staked object
 				tx.object("0x0000000000000000000000000000000000000000000000000000000000000006"),
 			],
 			typeArguments: [

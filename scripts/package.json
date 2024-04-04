@@ -14,6 +14,7 @@
     "claim": "bun ./src/staking/claim.ts",
     "unstake": "bun ./src/staking/unstake.ts",
     "start": "bun ./src/staking/start.ts",
+    "rewards": "bun ./src/staking/rewards.ts",
     "airdrop": "bun ./src/airdrop/airdrop.ts",
     "claim_airdrop": "bun ./src/airdrop/claim.ts",
     "transfer": "bun ./src/coin/transfer.ts",

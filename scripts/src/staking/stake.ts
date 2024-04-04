@@ -9,7 +9,9 @@ import { client, keypair, getId } from '../utils.js';
 
 		const packageId = getId("package_id");
 
-		const [coin] = tx.splitCoins(tx.object(getId(`coin::Coin<${packageId}::mazu::MAZU>`)), [10]);
+		const [coin] = tx.splitCoins(tx.object(
+			"0xb1e548c96820dc6dbe7422f7ed934a01da0c700d6f4e0d7f5f6810bd396f7b96"
+		), [10]);
 		
 		const [staked] = tx.moveCall({
 			target: `${packageId}::staking::stake`,
