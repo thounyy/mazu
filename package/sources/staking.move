@@ -28,15 +28,6 @@ module mazu_finance::staking {
     const EStakedLocked: u64 = 3;
     const EWrongLockingDuration: u64 = 4;
 
-    // === Events ===
-
-    struct Test has copy, drop, store {
-        index: u64,
-        reward_index: u64,
-        supply: u64,
-        rewards: u64
-    }
-
     // === Structs ===
 
     struct StartRequest has store {}
@@ -246,6 +237,10 @@ module mazu_finance::staking {
 
         while (i < current_week + 1) {
             let emitted_this_week = *vector::borrow<u64>(&pool.emissions, i);
+            // if it's a full week or last week we add everything
+            if (i != current_week) {
+                emitted = emitted + emitted_this_week;
+            };
             // add everything emitted since start
             if (i == current_week) {
                 let ms_current_week = math::min(now - start - (current_week * MS_IN_WEEK), MS_IN_WEEK);
@@ -255,10 +250,6 @@ module mazu_finance::staking {
             if (i == last_week) {
                 let ms_last_week = math::min(pool.last_updated - start - (last_week * MS_IN_WEEK), MS_IN_WEEK);
                 emitted = emitted - math::mul_div_down(emitted_this_week, ms_last_week, MS_IN_WEEK);
-            };
-            // if it's a full week or last week we add everything
-            if (i != current_week) {
-                emitted = emitted + emitted_this_week;
             };
             i = i + 1;
         };
