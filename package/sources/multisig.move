@@ -19,6 +19,7 @@ module mazu_finance::multisig {
     const EProposalNotEmpty: u64 = 3;
     const ENotMember: u64 = 4;
     const EAlreadyMember: u64 = 5;
+    const EThresholdNull: u64 = 6;
 
     // === Structs ===
 
@@ -86,6 +87,7 @@ module mazu_finance::multisig {
         addresses: vector<address>, // addresses to add or remove
         ctx: &mut TxContext
     ) {
+        assert!(threshold > 0, EThresholdNull);
         // verify proposed addresses match current list
         let len = vector::length(&addresses);
         let i = 0;

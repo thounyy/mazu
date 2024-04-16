@@ -354,6 +354,24 @@ module mazu_finance::multisig_tests{
     }
 
     #[test]
+    #[expected_failure(abort_code = mazu_finance::multisig::EThresholdNull)]
+    fun cannot_set_threshold_null() {
+        let (scenario, s) = init_scenario();
+        let scen = &mut scenario;
+
+        modify_multisig(
+            scen,
+            &mut s,
+            b"threshold",
+            true,
+            0,
+            vector::empty(),
+        );
+
+        complete_scenario(scenario, s);
+    }
+
+    #[test]
     #[expected_failure(abort_code = mazu_finance::multisig::EAlreadyMember)]
     fun cannot_add_already_existing_members() {
         let (scenario, s) = init_scenario();
