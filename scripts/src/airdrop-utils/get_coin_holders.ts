@@ -18,7 +18,7 @@ import { SuiClientWithEndpoint, SuiMultiClient } from "@polymedia/suits";
     
         "https://sui-mainnet-rpc-germany.allthatnode.com",
         "https://sui-mainnet-rpc.allthatnode.com",
-        "https://sui-mainnet.nodeinfra.com",                    // 429 too many requests (occasionally)
+        // "https://sui-mainnet.nodeinfra.com",                    // 429 too many requests (occasionally)
         "https://sui1mainnet-rpc.chainode.tech",                // 502 bad gateway (works now)
         // "https://mainnet.sui.rpcpool.com",                   // 403 forbidden when using VPN
         // "https://sui-mainnet-rpc-korea.allthatnode.com",     // too slow/far
@@ -30,12 +30,16 @@ import { SuiClientWithEndpoint, SuiMultiClient } from "@polymedia/suits";
         // "https://sui-mainnet-eu-2.cosmostation.io",          // 000
     ]
     try {
-        const coinType = "0xbde4ba4c2e274a60ce15c1cfff9e5c42e41654ac8b6d906a57efa4bd3c29f47d::hasui::HASUI";
-        const limit = 9999;
+        const hasui = "0xbde4ba4c2e274a60ce15c1cfff9e5c42e41654ac8b6d906a57efa4bd3c29f47d::hasui::HASUI";
+        const vsui = "0x549e8b69270defbfafd4f94e17ec44cdbdd99820b33bda2278dea3b9a32d3f55::cert::CERT";
+        const afsui = "0xf325ce1300e8dac124071d3152c5c5ee6174914f8bc2161e88329cf579246efc::afsui::AFSUI";
+        const limit = 999999;
+
+        const coin = afsui;
         
         /* Fetch holders */
 
-        const urlHolders = `https://suiscan.xyz/api/sui-backend/mainnet/api/coins/${coinType}/holders?sortBy=AMOUNT&orderBy=DESC&searchStr=&page=0&size=${limit}`;
+        const urlHolders = `https://suiscan.xyz/api/sui-backend/mainnet/api/coins/${coin}/holders?sortBy=AMOUNT&orderBy=DESC&searchStr=&page=0&size=${limit}`;
         const resp: ApiResponse = await fetch(urlHolders)
         .then((response: Response) => {
             if (!response.ok)
@@ -55,7 +59,7 @@ import { SuiClientWithEndpoint, SuiMultiClient } from "@polymedia/suits";
         const fetchBalance = (client: SuiClientWithEndpoint, input: AddressAndBalance) => {
             return client.getBalance({
                 owner: input.address,
-                coinType: coinType,
+                coinType: coin,
             }).then(balance => {
                 return { address: input.address, balance: balance.totalBalance };
             }).catch((error: unknown) => {
@@ -66,10 +70,18 @@ import { SuiClientWithEndpoint, SuiMultiClient } from "@polymedia/suits";
         
         const allBalances = await multiClient.executeInBatches(output, fetchBalance);
 
-        const balances = allBalances.filter(balance => Number(balance.balance) > 1000000);
-        console.log(balances);
+        const balances = allBalances.filter(balance => Number(balance.balance) > 1000000000 * 200);
+        const holders = balances.map(holder => holder.address);
 
-        fs.writeFileSync("./holders.json", JSON.stringify(balances, null, 2));
+        fs.writeFileSync(`./src/airdrop-utils/${coin}-holders.json`, JSON.stringify(holders, null, 2));
+
+        const currentList = fs.readFileSync('./src/airdrop-utils/airdrop_list.json', 'utf8');
+		const parsedList = JSON.parse(currentList);
+		parsedList.push(...holders);
+		const uniqueList = [...new Set(parsedList)];
+		const newList = JSON.stringify(uniqueList, null, 2);
+		fs.writeFileSync('./src/airdrop-utils/airdrop_list.json', newList, 'utf8');
+
     } catch (e) { console.log(e) }
 })()
 

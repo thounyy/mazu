@@ -28,12 +28,16 @@
     "remove": "bun ./src/multisig/remove.ts",
     "execute": "bun ./src/multisig/execute.ts",
     "clean": "bun ./src/multisig/clean.ts",
-    "get_coin_holders": "bun ./src/utils/get_coin_holders.ts"
+    "get_coin_holders": "bun ./src/airdrop-utils/get_coin_holders.ts",
+    "get_liquidity_providers": "bun ./src/airdrop-utils/get_liquidity_providers.ts",
+    "get_pikka_addresses": "bun ./src/airdrop-utils/get_pikka_addresses.ts"
   },
   "dependencies": {
     "@mysten/sui.js": "^0.49.1",
     "@polymedia/suits": "^0.0.39",
     "bun-types": "^1.0.25",
-    "dotenv": "^16.4.1"
+    "csv-writer": "^1.6.0",
+    "dotenv": "^16.4.1",
+    "navi-sdk": "^1.1.20"
   }
 }
