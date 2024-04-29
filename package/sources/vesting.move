@@ -15,8 +15,8 @@ module mazu_finance::vesting {
     const EWrongProposal: u64 = 2;
     const ELockedNotEmpty: u64 = 3;
 
-    const MAX_TEAM: u64 = 88_888_888_888_888_888 * 2; // 20%
-    const MAX_PRIVATE_SALE: u64 = 88_888_888_888_888_888; // 10%
+    // const MAX_TEAM: u64 = 88_888_888_888_888_888 * 2; // 20%
+    // const MAX_PRIVATE_SALE: u64 = 88_888_888_888_888_888; // 10%
 
     struct Request has store { 
         stakeholder: String, // private_sale or team

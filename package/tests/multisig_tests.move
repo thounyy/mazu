@@ -1,6 +1,5 @@
 #[test_only]
 module mazu_finance::multisig_tests{
-    use std::debug::print;
     use std::string;
     use std::vector;
     use sui::test_scenario::{Self as ts, Scenario};

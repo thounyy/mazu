@@ -10,15 +10,13 @@ module mazu_finance::mazu_tests{
     use mazu_finance::mazu::{Self, Vault, MAZU};    
     use mazu_finance::multisig::{Self, Multisig};
 
-    const MAX_TEAM: u64 = 88_888_888_888_888_888 * 2; // 20%
+    // const MAX_TEAM: u64 = 88_888_888_888_888_888 * 2; // 20%
     const MAX_STRATEGY: u64 = 142_222_222_222_222_222; // 16%
-    const MAX_PRIVATE_SALE: u64 = 88_888_888_888_888_888; // 10%
+    // const MAX_PRIVATE_SALE: u64 = 88_888_888_888_888_888; // 10%
     const MAX_PUBLIC_SALE: u64 = 88_888_888_888_888_888; // 10%
     const MAX_MARKETING: u64 = 35_555_555_555_555_552; // 4%
     const MAX_COMMUNITY_INCENTIVES: u64 = 88_888_888_888_888_888; // 10%    
     
-    const MS_IN_WEEK: u64 = 1000 * 60 * 60 * 24 * 7;
-
     const OWNER: address = @0xBABE;
     const COMMUNITY: address = @0x1;
     const TEAM: address = @0x2;
@@ -86,7 +84,7 @@ module mazu_finance::mazu_tests{
         multisig::approve_proposal(&mut stor.multisig, name, ts::ctx(scen));
         let proposal = multisig::execute_proposal(&mut stor.multisig, name, ts::ctx(scen));
         let request = mazu::start_update_metadata(proposal);
-        mazu::complete_update_metadata(&mut stor.vault, &mut stor.metadata, request);
+        mazu::complete_update_metadata(&stor.vault, &mut stor.metadata, request);
     }
 
     fun transfer(
@@ -111,7 +109,7 @@ module mazu_finance::mazu_tests{
         mazu::complete_transfer(&mut stor.vault, request, ts::ctx(scen));
     }
 
-    fun handle_and_assert_coin(total: u64, amount: u64, addr: address, scen: &mut Scenario) {
+    fun handle_and_assert_coin(total: u64, amount: u64, addr: address, scen: &Scenario) {
         let mazu = ts::take_from_address<Coin<MAZU>>(scen, addr);
         total = total + amount;
         assert!(coin::value(&mazu) == total, 0);

@@ -108,6 +108,7 @@ module mazu_finance::staking_tests{
         complete_scenario(scenario, storage);
     }
 
+    #[allow(unused_mut_ref)]
     #[test]
     #[expected_failure(abort_code = mazu_finance::staking::ENotActive)]
     fun cannot_stake_before_start() {
@@ -117,6 +118,7 @@ module mazu_finance::staking_tests{
         complete_scenario(scenario, storage);
     }
 
+    #[allow(unused_mut_ref)]
     #[test]
     #[expected_failure(abort_code = mazu_finance::staking::EWrongLockingDuration)]
     fun cannot_stake_locking_too_long() {
@@ -127,6 +129,7 @@ module mazu_finance::staking_tests{
         complete_scenario(scenario, storage);
     }
 
+    #[allow(unused_mut_ref)]
     #[test]
     #[expected_failure(abort_code = mazu_finance::staking::EWrongCoinSent)]
     fun cannot_stake_wrong_coin() {
@@ -137,6 +140,7 @@ module mazu_finance::staking_tests{
         complete_scenario(scenario, storage);
     }
 
+    #[allow(unused_mut_ref)]
     #[test]
     #[expected_failure(abort_code = mazu_finance::staking::ECannotStakeZero)]
     fun cannot_stake_zero() {
@@ -147,6 +151,7 @@ module mazu_finance::staking_tests{
         complete_scenario(scenario, storage);
     }
 
+    #[allow(unused_mut_ref)]
     #[test]
     #[expected_failure(abort_code = mazu_finance::staking::EStakedLocked)]
     fun cannot_ustake_if_locked() {
@@ -160,6 +165,7 @@ module mazu_finance::staking_tests{
         complete_scenario(scenario, storage);
     }
 
+    #[allow(unused_mut_ref)]
     #[test]
     fun get_total_emissions_after_72_weeks() {
         let (scenario, storage) = init_scenario();
@@ -179,6 +185,7 @@ module mazu_finance::staking_tests{
         complete_scenario(scenario, storage);
     }
 
+    #[allow(unused_mut_ref)]
     #[test]
     fun no_more_rewards_after_72_weeks() {
         let (scenario, storage) = init_scenario();
@@ -198,6 +205,7 @@ module mazu_finance::staking_tests{
         complete_scenario(scenario, storage);
     }
 
+    #[allow(unused_mut_ref)]
     #[test]
     fun stake_claim_unstake_no_time_passed_single_user() {
         let (scenario, storage) = init_scenario();
@@ -318,6 +326,7 @@ module mazu_finance::staking_tests{
         complete_scenario(scenario, storage);
     }
 
+    #[allow(unused_mut_ref)]
     #[test]
     fun full_scen_no_lock_two_users() {
         let (scenario, s) = init_scenario();

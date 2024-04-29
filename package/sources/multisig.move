@@ -1,5 +1,4 @@
 module mazu_finance::multisig {
-    use std::debug::print;
     use std::string::String;
     use std::vector;
     use sui::transfer;
@@ -8,8 +7,6 @@ module mazu_finance::multisig {
     use sui::vec_set::{Self, VecSet};
     use sui::vec_map::{Self, VecMap};
     use sui::dynamic_field as df;
-
-    use mazu_finance::math;
 
     // === Errors ===
 

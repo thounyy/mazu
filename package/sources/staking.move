@@ -1,6 +1,6 @@
 module mazu_finance::staking {
     use std::vector;
-    use std::string::{Self, String};
+    use std::string::String;
     use sui::coin::{Self, Coin};
     use sui::sui::SUI;
     use sui::transfer;
@@ -102,7 +102,7 @@ module mazu_finance::staking {
         ctx: &mut TxContext
     ): Staked<T> {
         assert_active(staking);
-        assert!(df::exists_(&mut staking.id, PoolKey<T> {}), EWrongCoinSent);
+        assert!(df::exists_(&staking.id, PoolKey<T> {}), EWrongCoinSent);
         assert!(coin::value(&coin) != 0, ECannotStakeZero);
 
         let now = clock::timestamp_ms(clock);

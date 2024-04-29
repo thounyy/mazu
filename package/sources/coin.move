@@ -1,5 +1,4 @@
 module mazu_finance::mazu {
-            use std::debug::print;
     use std::option;
     use std::string::{Self, String};
     use sui::coin::{Self, Coin, TreasuryCap, CoinMetadata};
@@ -17,7 +16,7 @@ module mazu_finance::mazu {
 
     // === Constants ===
 
-    const MAX_SUPPLY: u64 = 888_888_888_888_888_888;
+    // const MAX_SUPPLY: u64 = 888_888_888_888_888_888;
     
     const MAX_TEAM: u64 = 88_888_888_888_888_888 * 2; // 20%
     const MAX_STRATEGY: u64 = 142_222_222_222_222_222; // 16%
@@ -28,9 +27,8 @@ module mazu_finance::mazu {
 
     // === Errors ===
 
-    const EUnknownStakeholder: u64 = 0;
+    const ENotEnoughFundsUnlocked: u64 = 0;
     const EStakeholderNotInVault: u64 = 1;
-    const ENotEnoughFundsUnlocked: u64 = 2;
 
     // === Structs ===
 
@@ -61,6 +59,7 @@ module mazu_finance::mazu {
         marketing: u64,
     }
 
+    #[allow(lint(share_owned))]
     fun init(
         otw: MAZU, 
         ctx: &mut TxContext
@@ -182,7 +181,7 @@ module mazu_finance::mazu {
         vault: &mut Vault, 
         stakeholder: String, 
         amount: u64, 
-        ctx: &mut TxContext
+        ctx: &TxContext
     ) {
         let (tge, vesting, period) = vesting_for_stakeholder(stakeholder);
 

@@ -91,13 +91,6 @@ module mazu_finance::vesting_tests{
         vesting::complete(request);
     }
 
-    fun handle_and_assert_coin(total: u64, amount: u64, addr: address, scen: &mut Scenario) {
-        let mazu = ts::take_from_address<Coin<MAZU>>(scen, addr);
-        total = total + amount;
-        assert!(coin::value(&mazu) == total, 0);
-        ts::return_to_address(addr, mazu);
-    }
-
     // === tests === 
 
     #[test]
