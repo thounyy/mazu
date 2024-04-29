@@ -2,6 +2,7 @@ module mazu_finance::mazu {
     use std::option;
     use std::string::{Self, String};
     use sui::coin::{Self, Coin, TreasuryCap, CoinMetadata};
+    use sui::balance::Supply;
     use sui::transfer;
     use sui::url;
     use sui::object::{Self, UID};
@@ -175,6 +176,10 @@ module mazu_finance::mazu {
     
     public(friend) fun cap_mut(vault: &mut Vault): &mut TreasuryCap<MAZU> {
         &mut vault.cap
+    }
+    
+    public(friend) fun supply_mut(vault: &mut Vault): &mut Supply<MAZU> {
+        coin::supply_mut(&mut vault.cap)
     }
 
     public(friend) fun handle_stakeholder(

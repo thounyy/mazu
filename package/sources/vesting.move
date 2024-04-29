@@ -3,6 +3,7 @@ module mazu_finance::vesting {
     use std::vector;
     use sui::object::{Self, UID};
     use sui::coin::{Self, Coin};
+    use sui::balance::{Self, Balance};
     use sui::tx_context::{Self, TxContext};
     use sui::transfer;
 
@@ -27,7 +28,7 @@ module mazu_finance::vesting {
     struct Locked<phantom MAZU> has key {
         id: UID,
         // vested mazu coins remaining
-        coins: Coin<MAZU>,
+        balance: Balance<MAZU>,
         // total coin vested at the beginning
         allocation: u64,
         // vesting start epoch
@@ -41,17 +42,17 @@ module mazu_finance::vesting {
     public fun unlock(locked: &mut Locked<MAZU>, amount: u64, ctx: &mut TxContext): Coin<MAZU> {
         let schedule_epoch = tx_context::epoch(ctx) - locked.start;
         let total_unlocked = math::mul_div_down(locked.allocation, schedule_epoch, locked.end - locked.start);
-        let claimed = math::sub(locked.allocation, coin::value(&locked.coins));
+        let claimed = math::sub(locked.allocation, balance::value(&locked.balance));
         assert!(amount <= math::sub(total_unlocked, claimed), ENotEnoughUnlocked);
                 
-        coin::split(&mut locked.coins, amount, ctx)
+        coin::from_balance(balance::split(&mut locked.balance, amount), ctx)
     }
 
-    public fun destroy_empty(locked: Locked<MAZU>, vault: &mut Vault) {
-        assert!(coin::value(&locked.coins) == 0, ELockedNotEmpty);
-        let Locked { id, coins, allocation: _, start: _, end: _ } = locked;
+    public fun destroy_empty(locked: Locked<MAZU>) {
+        assert!(balance::value(&locked.balance) == 0, ELockedNotEmpty);
+        let Locked { id, balance, allocation: _, start: _, end: _ } = locked;
         object::delete(id);
-        coin::burn(mazu::cap_mut(vault), coins);
+        balance::destroy_zero(balance);
     }
 
     // === Multisig functions === 
@@ -108,7 +109,7 @@ module mazu_finance::vesting {
             transfer::transfer(
                 Locked { 
                     id: object::new(ctx), 
-                    coins: coin::mint(mazu::cap_mut(vault), amount, ctx), 
+                    balance: balance::increase_supply(mazu::supply_mut(vault), amount), 
                     allocation: amount,
                     start: epoch, 
                     end 
@@ -130,12 +131,12 @@ module mazu_finance::vesting {
     #[test_only]
     public fun assert_locked_data(
         locked: &Locked<MAZU>,
-        coins: u64,
+        balance: u64,
         allocation: u64,
         start: u64,
         end: u64,
     ) {
-        assert!(coin::value(&locked.coins) == coins, 0);
+        assert!(balance::value(&locked.balance) == balance, 0);
         assert!(locked.allocation == allocation, 0);
         assert!(locked.start == start, 0);
         assert!(locked.end == end, 0);

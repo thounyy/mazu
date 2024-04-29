@@ -2,6 +2,7 @@ module mazu_finance::staking {
     use std::vector;
     use std::string::String;
     use sui::coin::{Self, Coin};
+    use sui::balance::{Self, Balance};
     use sui::sui::SUI;
     use sui::transfer;
     use sui::tx_context::TxContext;
@@ -56,7 +57,7 @@ module mazu_finance::staking {
         end: u64, // end timestamp in ms (same if no lock)
         value: u64, // coin_amount * boost
         reward_index: u128, // reward index when updated
-        coin: Coin<T>, // MAZU or LP<MAZU,SUI>
+        balance: Balance<T>, // MAZU or LP<MAZU,SUI>
     }
 
     fun init(ctx: &mut TxContext) {
@@ -118,7 +119,7 @@ module mazu_finance::staking {
             end: now + MS_IN_WEEK * weeks,
             value,
             reward_index: pool.reward_index,
-            coin
+            balance: coin::into_balance(coin)
         }
     }
 
@@ -153,7 +154,7 @@ module mazu_finance::staking {
     ): (Coin<T>, Coin<MAZU>) {
         assert_active(staking);
         let now = clock::timestamp_ms(clock);
-        let Staked { id, end, value, reward_index, coin } = staked;
+        let Staked { id, end, value, reward_index, balance } = staked;
         object::delete(id);
         
         assert!(
@@ -172,10 +173,10 @@ module mazu_finance::staking {
             (MUL as u128) as u64);
         
         pool.total_value = math::sub(pool.total_value, value);
-        pool.total_staked = math::sub(pool.total_staked, coin::value(&coin));
+        pool.total_staked = math::sub(pool.total_staked, balance::value(&balance));
         // return both staked coin and rewards
         let mazu = coin::mint(mazu::cap_mut(vault), rewards, ctx);
-        (coin, mazu)
+        (coin::from_balance(balance, ctx), mazu)
     }
 
     public fun calculate_rewards<T: drop>(
@@ -458,12 +459,12 @@ module mazu_finance::staking {
         end: u64,
         value: u64,
         reward_index: u128,
-        coin: u64,
+        balance: u64,
     ) {
         assert!(end == staked.end, 105);
         assert!(value == staked.value, 106);
         assert!(reward_index == staked.reward_index, 107);
-        assert!(coin == coin::value(&staked.coin), 108);
+        assert!(balance == balance::value(&staked.balance), 108);
     }
 }
 

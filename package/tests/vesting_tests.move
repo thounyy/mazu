@@ -144,8 +144,8 @@ module mazu_finance::vesting_tests{
         assert!(coin::value(&bob_mazu) == 548, 0);
         transfer::public_transfer(bob_mazu, BOB);
 
-        vesting::destroy_empty(alice_locked, &mut s.vault);
-        vesting::destroy_empty(bob_locked, &mut s.vault);
+        vesting::destroy_empty(alice_locked);
+        vesting::destroy_empty(bob_locked);
 
         complete_scenario(scenario, s);
     }
@@ -192,8 +192,8 @@ module mazu_finance::vesting_tests{
         assert!(coin::value(&bob_mazu) == 107, 0);
         transfer::public_transfer(bob_mazu, BOB);
 
-        vesting::destroy_empty(alice_locked, &mut s.vault);
-        vesting::destroy_empty(bob_locked, &mut s.vault);
+        vesting::destroy_empty(alice_locked);
+        vesting::destroy_empty(bob_locked);
 
         complete_scenario(scenario, s);
     }
@@ -270,7 +270,7 @@ module mazu_finance::vesting_tests{
         assert!(coin::value(&alice_mazu) == 30, 0);
         transfer::public_transfer(alice_mazu, ALICE);
 
-        vesting::destroy_empty(alice_locked, &mut s.vault);
+        vesting::destroy_empty(alice_locked);
 
         complete_scenario(scenario, s);
     }
@@ -293,7 +293,7 @@ module mazu_finance::vesting_tests{
         assert!(coin::value(&alice_mazu) == 29, 0);
         transfer::public_transfer(alice_mazu, ALICE);
 
-        vesting::destroy_empty(alice_locked, &mut s.vault);
+        vesting::destroy_empty(alice_locked);
 
         complete_scenario(scenario, s);
     }
