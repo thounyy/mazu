@@ -18,6 +18,8 @@ module mazu_finance::staking {
 
     // === Constants ===
 
+    const VERSION: u64 = 1;
+
     const MUL: u64 = 1_000_000_000;
     const MS_IN_WEEK: u64 = 1000 * 60 * 60 * 24 * 7;
 
@@ -28,6 +30,7 @@ module mazu_finance::staking {
     const ENotActive: u64 = 2;
     const EStakedLocked: u64 = 3;
     const EWrongLockingDuration: u64 = 4;
+    const EWrongVersion: u64 = 5;
 
     // === Structs ===
 
@@ -38,6 +41,7 @@ module mazu_finance::staking {
     // shared
     struct Staking has key { 
         id: UID,
+        version: u64,
         start: u64, // start timestamp to get week
         active: bool,
         // DF Pool
@@ -63,6 +67,7 @@ module mazu_finance::staking {
     fun init(ctx: &mut TxContext) {
         let staking = Staking { 
             id: object::new(ctx),
+            version: VERSION,
             start: 0,
             active: false,
         };
@@ -103,6 +108,7 @@ module mazu_finance::staking {
         ctx: &mut TxContext
     ): Staked<T> {
         assert_active(staking);
+        assert_last_version(staking);
         assert!(df::exists_(&staking.id, PoolKey<T> {}), EWrongCoinSent);
         assert!(coin::value(&coin) != 0, ECannotStakeZero);
 
@@ -131,6 +137,7 @@ module mazu_finance::staking {
         ctx: &mut TxContext
     ): Coin<MAZU> {
         assert_active(staking);
+        assert_last_version(staking);
         let now = clock::timestamp_ms(clock);
         let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
         // update global and user indexes
@@ -153,6 +160,7 @@ module mazu_finance::staking {
         ctx: &mut TxContext
     ): (Coin<T>, Coin<MAZU>) {
         assert_active(staking);
+        assert_last_version(staking);
         let now = clock::timestamp_ms(clock);
         let Staked { id, end, value, reward_index, balance } = staked;
         object::delete(id);
@@ -184,6 +192,7 @@ module mazu_finance::staking {
         staked: &mut Staked<T>, 
         clock: &Clock,
     ): u64 {
+        assert_last_version(staking);
         let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
         update_rewards(pool, clock::timestamp_ms(clock), staking.start);
         let rewards = math::mul_div_down(
@@ -290,6 +299,10 @@ module mazu_finance::staking {
 
     fun assert_active(staking: &Staking) {
         assert!(staking.active, ENotActive);
+    }
+
+    fun assert_last_version(staking: &Staking) {
+        assert!(staking.version == VERSION, EWrongVersion);
     }
 
     fun init_mazu_emissions(): vector<u64> {
