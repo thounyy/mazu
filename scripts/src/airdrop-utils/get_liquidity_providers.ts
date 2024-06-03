@@ -89,14 +89,14 @@ export const client = new SuiClient({ url: "https://rpc-mainnet.suiscan.xyz" });
 		.map((tx) => tx.transaction?.data.sender)
 		.filter((item, index, self) => self.indexOf(item) === index);
 
-	fs.writeFileSync(`./src/airdrop-utils/buck-providers.json`, JSON.stringify(senders, null, 2));
+	fs.writeFileSync(`./src/airdrop-utils/buck1-providers.json`, JSON.stringify(senders, null, 2));
 
-	if (senders) {
-		const currentList = fs.readFileSync('./src/airdrop-utils/airdrop_list.json', 'utf8');
-		const parsedList = JSON.parse(currentList);
-		parsedList.push(...senders);
-		const uniqueList = [...new Set(parsedList)];
-		const newList = JSON.stringify(uniqueList, null, 2);
-		fs.writeFileSync('./src/airdrop-utils/airdrop_list.json', newList, 'utf8');
-	}
+	// if (senders) {
+	// 	const currentList = fs.readFileSync('./src/airdrop-utils/airdrop_list.json', 'utf8');
+	// 	const parsedList = JSON.parse(currentList);
+	// 	parsedList.push(...senders);
+	// 	const uniqueList = [...new Set(parsedList)];
+	// 	const newList = JSON.stringify(uniqueList, null, 2);
+	// 	fs.writeFileSync('./src/airdrop-utils/airdrop_list.json', newList, 'utf8');
+	// }
 })()

@@ -34,12 +34,10 @@ import { SuiClientWithEndpoint, SuiMultiClient } from "@polymedia/suits";
         const vsui = "0x549e8b69270defbfafd4f94e17ec44cdbdd99820b33bda2278dea3b9a32d3f55::cert::CERT";
         const afsui = "0xf325ce1300e8dac124071d3152c5c5ee6174914f8bc2161e88329cf579246efc::afsui::AFSUI";
         const limit = 999999;
-
-        const coin = afsui;
         
         /* Fetch holders */
 
-        const urlHolders = `https://suiscan.xyz/api/sui-backend/mainnet/api/coins/${coin}/holders?sortBy=AMOUNT&orderBy=DESC&searchStr=&page=0&size=${limit}`;
+        const urlHolders = `https://suiscan.xyz/api/sui-backend/mainnet/api/coins/${afsui}/holders?sortBy=AMOUNT&orderBy=DESC&searchStr=&page=0&size=${limit}`;
         const resp: ApiResponse = await fetch(urlHolders)
         .then((response: Response) => {
             if (!response.ok)
@@ -59,7 +57,7 @@ import { SuiClientWithEndpoint, SuiMultiClient } from "@polymedia/suits";
         const fetchBalance = (client: SuiClientWithEndpoint, input: AddressAndBalance) => {
             return client.getBalance({
                 owner: input.address,
-                coinType: coin,
+                coinType: afsui,
             }).then(balance => {
                 return { address: input.address, balance: balance.totalBalance };
             }).catch((error: unknown) => {
@@ -70,17 +68,20 @@ import { SuiClientWithEndpoint, SuiMultiClient } from "@polymedia/suits";
         
         const allBalances = await multiClient.executeInBatches(output, fetchBalance);
 
-        const balances = allBalances.filter(balance => Number(balance.balance) > 1000000000 * 200);
-        const holders = balances.map(holder => holder.address);
+        const balances = allBalances.filter(balance => {
+            console.log(balance);
+            if (balance && balance.balance) return Number(balance.balance) > 1000000000 * 200
+        });
+        // const holders = balances.map(holder => holder.address);
 
-        fs.writeFileSync(`./src/airdrop-utils/${coin}-holders.json`, JSON.stringify(holders, null, 2));
+        fs.writeFileSync(`./src/airdrop-utils/afsui-holders.json`, JSON.stringify(balances, null, 2));
 
-        const currentList = fs.readFileSync('./src/airdrop-utils/airdrop_list.json', 'utf8');
-		const parsedList = JSON.parse(currentList);
-		parsedList.push(...holders);
-		const uniqueList = [...new Set(parsedList)];
-		const newList = JSON.stringify(uniqueList, null, 2);
-		fs.writeFileSync('./src/airdrop-utils/airdrop_list.json', newList, 'utf8');
+        // const currentList = fs.readFileSync('./src/airdrop-utils/airdrop_list.json', 'utf8');
+		// const parsedList = JSON.parse(currentList);
+		// parsedList.push(...holders);
+		// const uniqueList = [...new Set(parsedList)];
+		// const newList = JSON.stringify(uniqueList, null, 2);
+		// fs.writeFileSync('./src/airdrop-utils/airdrop_list.json', newList, 'utf8');
 
     } catch (e) { console.log(e) }
 })()

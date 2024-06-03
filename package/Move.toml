@@ -1,5 +1,5 @@
 [package]
-name = "mazu-finance"
+name = "MazuFinance"
 version = "0.0.0"
 
 [dependencies]
