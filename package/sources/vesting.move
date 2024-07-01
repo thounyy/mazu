@@ -90,7 +90,7 @@ module mazu_finance::vesting {
         let epoch = tx_context::epoch(ctx);
         let end = if (request.stakeholder == string::utf8(b"private_sale")) {
             epoch + 274
-        } else { epoch + 548 };
+        } else { epoch + 456 };
 
         while (vector::length(&request.addresses) != 0) {
             let amount = vector::pop_back(&mut request.amounts);

@@ -14,7 +14,7 @@ module mazu_finance::mazu_tests{
     const MAX_STRATEGY: u64 = 142_222_222_222_222_222; // 16%
     // const MAX_PRIVATE_SALE: u64 = 88_888_888_888_888_888; // 10%
     const MAX_PUBLIC_SALE: u64 = 88_888_888_888_888_888; // 10%
-    const MAX_MARKETING: u64 = 35_555_555_555_555_552; // 4%
+    const MAX_MARKETING: u64 = 26_666_666_666_666_664; // 3%
     const MAX_COMMUNITY_INCENTIVES: u64 = 88_888_888_888_888_888; // 10%    
     
     const OWNER: address = @0xBABE;

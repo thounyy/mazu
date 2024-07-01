@@ -9,7 +9,7 @@ module mazu_finance::airdrop {
     use mazu_finance::mazu::{Self, MAZU, Vault};
     use mazu_finance::multisig::{Self, Multisig, Proposal};
     
-    const MAX_AIRDROP_SUPPLY: u64 = 8_888_888_888_888_888; // 1%
+    const MAX_AIRDROP_SUPPLY: u64 = 8_888_888_888_888_888 * 2; // 2%
 
     const ENoMoreCoinsToClaim: u64 = 0;
 

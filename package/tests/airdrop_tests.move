@@ -111,18 +111,18 @@ module mazu_finance::airdrop_tests{
     #[test]
     fun claim_more_than_supply() {
         let (scenario, storage) = init_scenario();
-        airdrop(&mut scenario, &mut storage, 4_444_444_444_444_445);
+        airdrop(&mut scenario, &mut storage, 8_888_888_888_888_889);
         let storage = forward_scenario(&mut scenario, storage, OWNER);
 
         let alice_ticket = ts::take_from_address<Ticket>(&scenario, ALICE);
         let alice_mazu = airdrop::claim(alice_ticket, &mut storage.airdrop, &mut storage.vault, ts::ctx(&mut scenario));
         let storage = forward_scenario(&mut scenario, storage, ALICE);
-        assert!(coin::value(&alice_mazu) == 4_444_444_444_444_445, 0);
+        assert!(coin::value(&alice_mazu) == 8_888_888_888_888_889, 0);
 
         let bob_ticket = ts::take_from_address<Ticket>(&scenario, BOB);
         let bob_mazu = airdrop::claim(bob_ticket, &mut storage.airdrop, &mut storage.vault, ts::ctx(&mut scenario));
         let storage = forward_scenario(&mut scenario, storage, BOB);
-        assert!(coin::value(&bob_mazu) == 4_444_444_444_444_443, 0);
+        assert!(coin::value(&bob_mazu) == 8_888_888_888_888_887, 0);
 
         transfer::public_transfer(alice_mazu, ALICE);
         transfer::public_transfer(bob_mazu, BOB);
@@ -133,13 +133,13 @@ module mazu_finance::airdrop_tests{
     #[expected_failure(abort_code = mazu_finance::airdrop::ENoMoreCoinsToClaim)]
     fun claim_too_much() {
         let (scenario, storage) = init_scenario();
-        airdrop(&mut scenario, &mut storage, 8_888_888_888_888_888);
+        airdrop(&mut scenario, &mut storage, 8_888_888_888_888_888 * 2);
         let storage = forward_scenario(&mut scenario, storage, OWNER);
 
         let alice_ticket = ts::take_from_address<Ticket>(&scenario, ALICE);
         let alice_mazu = airdrop::claim(alice_ticket, &mut storage.airdrop, &mut storage.vault, ts::ctx(&mut scenario));
         let storage = forward_scenario(&mut scenario, storage, ALICE);
-        assert!(coin::value(&alice_mazu) == 8_888_888_888_888_888, 0);
+        assert!(coin::value(&alice_mazu) == 8_888_888_888_888_888 * 2, 0);
 
         let bob_ticket = ts::take_from_address<Ticket>(&scenario, BOB);
         let bob_mazu = airdrop::claim(bob_ticket, &mut storage.airdrop, &mut storage.vault, ts::ctx(&mut scenario));

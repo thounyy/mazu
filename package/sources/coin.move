@@ -23,7 +23,7 @@ module mazu_finance::mazu {
     const MAX_STRATEGY: u64 = 142_222_222_222_222_222; // 16%
     const MAX_PRIVATE_SALE: u64 = 88_888_888_888_888_888; // 10%
     const MAX_PUBLIC_SALE: u64 = 88_888_888_888_888_888; // 10%
-    const MAX_MARKETING: u64 = 35_555_555_555_555_552; // 4%
+    const MAX_MARKETING: u64 = 26_666_666_666_666_664; // 3%
     const MAX_COMMUNITY_INCENTIVES: u64 = 88_888_888_888_888_888; // 10%
 
     // === Errors ===
@@ -260,8 +260,8 @@ module mazu_finance::mazu {
             period = 1;
             // vesting = 0
         } else if (stakeholder == string::utf8(b"marketing")) {
-            tge = MAX_MARKETING / 4;
-            vesting = MAX_MARKETING - tge;
+            tge = MAX_MARKETING / 2;
+            vesting = tge;
             period = 548;
         };
 

@@ -104,12 +104,12 @@ module mazu_finance::vesting_tests{
         let (scenario, s) = init_scenario();
         let scen = &mut scenario;
         // airdrop Locked 
-        vesting(scen, &mut s, b"team", 548);
+        vesting(scen, &mut s, b"team", 456);
         let s = forward_scenario(scen, s, OWNER);
         let alice_locked = ts::take_from_address<Locked<MAZU>>(scen, ALICE);
-        vesting::assert_locked_data(&alice_locked, 548, 548, 0, 548);
+        vesting::assert_locked_data(&alice_locked, 456, 456, 0, 456);
         let bob_locked = ts::take_from_address<Locked<MAZU>>(scen, BOB);
-        vesting::assert_locked_data(&bob_locked, 1096, 1096, 0, 548);
+        vesting::assert_locked_data(&bob_locked, 912, 912, 0, 456);
 
         // 1 month
         increment_epoch(scen, 30);
@@ -122,26 +122,26 @@ module mazu_finance::vesting_tests{
         assert!(coin::value(&bob_mazu) == 60, 0);
         transfer::public_transfer(bob_mazu, BOB);
         
-        // 9 months
-        increment_epoch(scen, 244);
-        let alice_mazu = vesting::unlock(&mut alice_locked, 244, ts::ctx(scen));
+        // 5 months
+        increment_epoch(scen, 122);
+        let alice_mazu = vesting::unlock(&mut alice_locked, 122, ts::ctx(scen));
         let s = forward_scenario(scen, s, ALICE);
-        assert!(coin::value(&alice_mazu) == 244, 0);
+        assert!(coin::value(&alice_mazu) == 122, 0);
         transfer::public_transfer(alice_mazu, ALICE);
-        let bob_mazu = vesting::unlock(&mut bob_locked, 488, ts::ctx(scen));
+        let bob_mazu = vesting::unlock(&mut bob_locked, 244, ts::ctx(scen));
         let s = forward_scenario(scen, s, BOB);
-        assert!(coin::value(&bob_mazu) == 488, 0);
+        assert!(coin::value(&bob_mazu) == 244, 0);
         transfer::public_transfer(bob_mazu, BOB);
 
-        // 18 months
-        increment_epoch(scen, 274);
-        let alice_mazu = vesting::unlock(&mut alice_locked, 274, ts::ctx(scen));
+        // 15 months
+        increment_epoch(scen, 304);
+        let alice_mazu = vesting::unlock(&mut alice_locked, 304, ts::ctx(scen));
         let s = forward_scenario(scen, s, ALICE);
-        assert!(coin::value(&alice_mazu) == 274, 0);
+        assert!(coin::value(&alice_mazu) == 304, 0);
         transfer::public_transfer(alice_mazu, ALICE);
-        let bob_mazu = vesting::unlock(&mut bob_locked, 548, ts::ctx(scen));
+        let bob_mazu = vesting::unlock(&mut bob_locked, 608, ts::ctx(scen));
         let s = forward_scenario(scen, s, BOB);
-        assert!(coin::value(&bob_mazu) == 548, 0);
+        assert!(coin::value(&bob_mazu) == 608, 0);
         transfer::public_transfer(bob_mazu, BOB);
 
         vesting::destroy_empty(alice_locked);
@@ -281,10 +281,10 @@ module mazu_finance::vesting_tests{
         let (scenario, s) = init_scenario();
         let scen = &mut scenario;
         // airdrop Locked 
-        vesting(scen, &mut s, b"team", 548);
+        vesting(scen, &mut s, b"team", 456);
         let s = forward_scenario(scen, s, OWNER);
         let alice_locked = ts::take_from_address<Locked<MAZU>>(scen, ALICE);
-        vesting::assert_locked_data(&alice_locked, 548, 548, 0, 548);
+        vesting::assert_locked_data(&alice_locked, 456, 456, 0, 456);
 
         // 1 month
         increment_epoch(scen, 30);
