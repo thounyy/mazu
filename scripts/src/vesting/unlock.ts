@@ -12,7 +12,7 @@ import { client, keypair, getId } from '../utils.js';
 		const [mazu] = tx.moveCall({
 			target: `${packageId}::vesting::unlock`,
 			arguments: [
-				tx.object("0xefccf099b95ff57f5b02648a5725b28037959cee4a663cf1644b7a40287c7967"), // Locked object 
+				tx.object("0x76d34a8b3691b95f4a663475b4b5be17caea2909f9fbde9b3aa21d235f04232b"), // Locked object 
 				tx.pure(1), // amount
 			],
 		});

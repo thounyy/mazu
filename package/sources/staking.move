@@ -10,7 +10,7 @@ module mazu_finance::staking {
     use sui::dynamic_field as df;
     use sui::clock::{Self, Clock};
 
-    use flowxswap::pair::LP;
+    use mazu_sui_lp_coin::af_lp::AF_LP;
 
     use mazu_finance::math;
     use mazu_finance::mazu::{Self, MAZU, Vault};
@@ -61,7 +61,7 @@ module mazu_finance::staking {
         end: u64, // end timestamp in ms (same if no lock)
         value: u64, // coin_amount * boost
         reward_index: u128, // reward index when updated
-        balance: Balance<T>, // MAZU or LP<MAZU,SUI>
+        balance: Balance<T>, // MAZU or AF_LP
     }
 
     fun init(ctx: &mut TxContext) {
@@ -85,7 +85,7 @@ module mazu_finance::staking {
         );
         df::add(
             &mut staking.id, 
-            PoolKey<LP<MAZU,SUI>> {}, 
+            PoolKey<AF_LP> {}, 
             Pool {
                 total_value: 0,
                 total_staked: 0,
@@ -230,7 +230,7 @@ module mazu_finance::staking {
         staking.start = now;
         let mazu = df::borrow_mut<PoolKey<MAZU>, Pool>(&mut staking.id, PoolKey<MAZU> {});
         mazu.last_updated = now;
-        let lp = df::borrow_mut<PoolKey<LP<MAZU,SUI>>, Pool>(&mut staking.id, PoolKey<LP<MAZU,SUI>> {});
+        let lp = df::borrow_mut<PoolKey<AF_LP>, Pool>(&mut staking.id, PoolKey<AF_LP> {});
         lp.last_updated = now;
     }
 

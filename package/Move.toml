@@ -4,9 +4,7 @@ version = "0.0.0"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
-MoveStdlib = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/move-stdlib", rev = "framework/mainnet" }
-# SuiTears = { git = "https://github.com/interest-protocol/suitears.git", subdir = "contracts", rev = "testnet" }
-flowxswap = { local = "./deps/Flowx" }
+AftermathAmmLpCreation = { local = "./deps/aftermath" }
 
 [addresses]
 mazu_finance = "0x0"

@@ -66,16 +66,13 @@ module mazu_finance::airdrop_tests{
     }
 
     fun airdrop(scen: &mut Scenario, stor: &mut Storage, amount: u64) {
-        let recipients = vector::empty();
-        vector::push_back(&mut recipients, ALICE);
-        vector::push_back(&mut recipients, BOB);
-
         let name = string::utf8(b"airdrop");
         airdrop::propose(&mut stor.multisig, name, ts::ctx(scen));
         multisig::approve_proposal(&mut stor.multisig, name, ts::ctx(scen));
         let proposal = multisig::execute_proposal(&mut stor.multisig, name, ts::ctx(scen));
         let request = airdrop::start(proposal);
-        airdrop::drop(&request, amount, recipients, ts::ctx(scen));
+        airdrop::drop(&request, amount, ALICE, ts::ctx(scen));
+        airdrop::drop(&request, amount, BOB, ts::ctx(scen));
         airdrop::complete(request);
     }
 

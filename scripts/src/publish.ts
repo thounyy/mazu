@@ -73,6 +73,6 @@ import { client, keypair, IObjectInfo, getId } from './utils.js';
 	} catch (e) {
 		console.log(e);
 	} finally {
-        console.log("\n\nSuccessfully deployed at: " + getId("package"));
+        console.log("\n\nSuccessfully deployed at: " + getId("package_id"));
 	}
 })()

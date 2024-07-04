@@ -1,0 +1,21 @@
+[package]
+name = "AftermathAmmLpCreation"
+version = "0.0.1"
+published-at = "0xcc2fdcce83acdc63a607bea2d5a04511ec7a252d7bbe4087f9fd8f9eb3c1a9fa"
+# upgrade-cap = "0x23e0a32d802cef5839a6e6223f0c676d29492d8a3dbc1c7d41cbbb121b58aa9a"
+
+# [objects]
+# create-pool-cap = "0x7e120d4d1a6f779068e3f2696b828e82c9c6ace227ca9c8b8dc092c1401717eb"
+
+[dependencies.Sui]
+git = "https://github.com/MystenLabs/sui.git"
+subdir = "crates/sui-framework/packages/sui-framework"
+rev = "framework/mainnet"
+
+[dependencies.AftermathAmmInterface]
+git = "https://github.com/AftermathFinance/move-interfaces.git"
+subdir = "packages/amm/amm-interface"
+rev = "main"
+
+[addresses]
+mazu_sui_lp_coin = "0xcc2fdcce83acdc63a607bea2d5a04511ec7a252d7bbe4087f9fd8f9eb3c1a9fa"

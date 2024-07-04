@@ -1,0 +1,38 @@
+[
+  {
+    "type": "dynamic_field::Field<0xd4c660ca859f5ec16cdb21e3a22c5badcb181c8f743f56bbd54b39db89e76c2d::staking::PoolKey<0x5f514bf7e3c8ed979b97719cffd633e5108e46ef9535a280951fe9a080d78661::pair::LP<0xd4c660ca859f5ec16cdb21e3a22c5badcb181c8f743f56bbd54b39db89e76c2d::mazu::MAZU, 0x2::sui::SUI>>, 0xd4c660ca859f5ec16cdb21e3a22c5badcb181c8f743f56bbd54b39db89e76c2d::staking::Pool>",
+    "id": "0x16c2a0c9e9adfa7faefefb747edcaec8ebfbc44ebaf61930cb723c61a4440581"
+  },
+  {
+    "type": "staking::Staking",
+    "id": "0x1d870d4a4ecf707e2d38900f341d740c652a81218cdc096ab88971f62e494674"
+  },
+  {
+    "type": "multisig::Multisig",
+    "id": "0x299dfd3ca53830719614f41090086f088a407854298f8755acb9307a65174fd2"
+  },
+  {
+    "type": "dynamic_field::Field<0xd4c660ca859f5ec16cdb21e3a22c5badcb181c8f743f56bbd54b39db89e76c2d::staking::PoolKey<0xd4c660ca859f5ec16cdb21e3a22c5badcb181c8f743f56bbd54b39db89e76c2d::mazu::MAZU>, 0xd4c660ca859f5ec16cdb21e3a22c5badcb181c8f743f56bbd54b39db89e76c2d::staking::Pool>",
+    "id": "0x2d4dbfda95e8800d809c7cdca83d7188c5b77ae726d4207fd92046f385f4515c"
+  },
+  {
+    "type": "airdrop::Airdrop",
+    "id": "0xc5ffa4f28952ac9cc0dc6412d1f8be435e39e0cc5a9f0ea9622dff7d574a6d80"
+  },
+  {
+    "type": "package::UpgradeCap",
+    "id": "0xd3e38ee7ce381b78944b221768eb2915e02304925939c2fd06066ba9a7a00b32"
+  },
+  {
+    "type": "mazu::Vault",
+    "id": "0xd46e8875a9d1e71ae6f88325e64f4f53332bcb47d533258a1340ffd9682a0e6a"
+  },
+  {
+    "type": "package_id",
+    "id": "0xd4c660ca859f5ec16cdb21e3a22c5badcb181c8f743f56bbd54b39db89e76c2d"
+  },
+  {
+    "type": "coin::CoinMetadata<0xd4c660ca859f5ec16cdb21e3a22c5badcb181c8f743f56bbd54b39db89e76c2d::mazu::MAZU>",
+    "id": "0xf164cc91b8ea5ab639b0ba95cc1c24d243b651f61da1ffdd5c496ecd9fb934cf"
+  }
+]

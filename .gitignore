@@ -2,6 +2,7 @@ build
 .deps
 .coverage_map.mvcov
 .trace
+.env
 
 node_modules
 

@@ -1,86 +1,107 @@
 import { TransactionBlock } from '@mysten/sui.js/transactions';
 import { client, keypair, getId } from '../utils.js';
 
+async function loadAirdrops() {
+	const fs = require('fs');
+	const path = require('path');
+	const csv = require('csv-parser');
+
+	let airdrops: { user: string, amount: string }[] = [];
+	const filePath = path.resolve(__dirname, './airdrops.csv');
+
+	await new Promise((resolve, reject) => {
+		fs.createReadStream(filePath)
+			.pipe(csv())
+			.on('data', (data: any) => airdrops.push({ user: data.owner, amount: data.alloc }))
+			.on('end', resolve)
+			.on('error', reject);
+	});
+
+	airdrops = airdrops.map(drop => ({
+		user: drop.user,
+		amount: (parseFloat(drop.amount.replace(',', '')) * 1e9).toFixed(0)
+	}));
+
+	return airdrops;
+}
 
 (async () => {
-	const addresses = [
-		// "0x67fa77f2640ca7e0141648bf008e13945263efad6dc429303ad49c740e2084a9",
-		"0xdc2dbdf749bcf228a97339020607110baf45248ccc3e7671edd3e3c866a75717",
-		"0xdc2dbdf749bcf228a97339020607110baf45248ccc3e7671edd3e3c866a75717",
-		"0xdc2dbdf749bcf228a97339020607110baf45248ccc3e7671edd3e3c866a75717",
-		"0xdc2dbdf749bcf228a97339020607110baf45248ccc3e7671edd3e3c866a75717",
-		"0xdc2dbdf749bcf228a97339020607110baf45248ccc3e7671edd3e3c866a75717",
-	]
 	try {
 		console.log("calling...")
 
-		const tx = new TransactionBlock();
-
 		const packageId = getId("package_id");
+		const airdrops = await loadAirdrops();
+		console.log(airdrops)
 
-		tx.moveCall({
-			target: `${packageId}::airdrop::propose`,
-			arguments: [
-				tx.object(getId("multisig::Multisig")), 
-				tx.pure("airdrop")
-			]
-		});
+		while (airdrops.length > 0) {
+			const tx = new TransactionBlock();
 
-		tx.moveCall({
-			target: `${packageId}::multisig::approve_proposal`,
-			arguments: [
-				tx.object(getId("multisig::Multisig")), 
-				tx.pure("airdrop")
-			]
-		});
-
-		const [proposal] = tx.moveCall({
-			target: `${packageId}::multisig::execute_proposal`,
-			arguments: [
-				tx.object(getId("multisig::Multisig")), 
-				tx.pure("airdrop")
-			]
-		});
-
-		const [request] = tx.moveCall({
-			target: `${packageId}::airdrop::start`,
-			arguments: [
-				tx.object(proposal)
-			]
-		});
-
-		// for (let i = 0; i < 20; i++) {
 			tx.moveCall({
-				target: `${packageId}::airdrop::drop`,
+				target: `${packageId}::airdrop::propose`,
 				arguments: [
-					tx.object(request),
-					tx.pure(1000000000000000),
-					tx.pure(addresses)
+					tx.object(getId("multisig::Multisig")), 
+					tx.pure("airdrop")
 				]
 			});
-		// }
 
-		tx.moveCall({
-			target: `${packageId}::airdrop::complete`,
-			arguments: [
-				tx.object(request)
-			]
-		});
+			tx.moveCall({
+				target: `${packageId}::multisig::approve_proposal`,
+				arguments: [
+					tx.object(getId("multisig::Multisig")), 
+					tx.pure("airdrop")
+				]
+			});
 
-		tx.setGasBudget(5000000000);
+			const [proposal] = tx.moveCall({
+				target: `${packageId}::multisig::execute_proposal`,
+				arguments: [
+					tx.object(getId("multisig::Multisig")), 
+					tx.pure("airdrop")
+				]
+			});
 
-		const result = await client.signAndExecuteTransactionBlock({
-			signer: keypair,
-			transactionBlock: tx,
-			options: {
-				showObjectChanges: true,
-				showEffects: true,
-			},
-			requestType: "WaitForLocalExecution"
-		});
+			const [request] = tx.moveCall({
+				target: `${packageId}::airdrop::start`,
+				arguments: [
+					tx.object(proposal)
+				]
+			});
 
-		console.log("result: ", JSON.stringify(result.objectChanges, null, 2));
-		console.log("status: ", JSON.stringify(result.effects?.status, null, 2));
+			const drops = airdrops.splice(-100);
+			for (let i = 0; i < drops.length; i++) {
+				const drop = drops.pop();
+				tx.moveCall({
+					target: `${packageId}::airdrop::drop`,
+					arguments: [
+						tx.object(request),
+						tx.pure(Number(drop?.amount)),
+						tx.pure(drop?.user)
+					]
+				});
+			}
+
+			tx.moveCall({
+				target: `${packageId}::airdrop::complete`,
+				arguments: [
+					tx.object(request)
+				]
+			});
+
+			tx.setGasBudget(5000000000);
+
+			const result = await client.signAndExecuteTransactionBlock({
+				signer: keypair,
+				transactionBlock: tx,
+				options: {
+					showObjectChanges: true,
+					showEffects: true,
+				},
+				requestType: "WaitForLocalExecution"
+			});
+
+			console.log("result: ", JSON.stringify(result.objectChanges, null, 2));
+			console.log("status: ", JSON.stringify(result.effects?.status, null, 2));
+		}
 
 	} catch (e) {
 		console.log(e)

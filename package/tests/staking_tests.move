@@ -7,7 +7,7 @@ module mazu_finance::staking_tests{
     use sui::transfer;
     use sui::sui::SUI;
 
-    use flowxswap::pair::LP;
+    use mazu_sui_lp_coin::af_lp::AF_LP;
     use mazu_finance::staking::{Self, Staking};
     use mazu_finance::mazu::{Self, Vault, MAZU};
     use mazu_finance::multisig::{Self, Multisig};
@@ -174,7 +174,7 @@ module mazu_finance::staking_tests{
         clock::increment_for_testing(&mut storage.clock, MS_IN_WEEK * 72);
         let (deposit_mazu, rewards_mazu) = staking::unstake(&mut storage.vault, &mut storage.staking, staked_mazu, &mut storage.clock, ts::ctx(&mut scenario));
         assert!(coin::value(&rewards_mazu) == 44444444520000000, 0);
-        let staked_lp = staking::stake(&mut storage.staking, coin::mint_for_testing<LP<MAZU,SUI>>(100, ts::ctx(&mut scenario)), &mut storage.clock, 0, ts::ctx(&mut scenario));
+        let staked_lp = staking::stake(&mut storage.staking, coin::mint_for_testing<AF_LP>(100, ts::ctx(&mut scenario)), &mut storage.clock, 0, ts::ctx(&mut scenario));
         clock::increment_for_testing(&mut storage.clock, MS_IN_WEEK * 72);
         let (deposit_lp, rewards_lp) = staking::unstake(&mut storage.vault, &mut storage.staking, staked_lp, &mut storage.clock, ts::ctx(&mut scenario));
         assert!(coin::value(&rewards_lp) == 213333333350000000, 0);

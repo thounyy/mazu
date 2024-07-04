@@ -75,15 +75,13 @@ module mazu_finance::airdrop {
     public fun drop(
         _: &Request, 
         amount: u64, 
-        recipients: vector<address>, 
+        recipient: address,
         ctx: &mut TxContext
     ) {
-        while (vector::length(&recipients) != 0) {    
-            transfer::public_transfer(
-                Ticket { id: object::new(ctx), amount }, 
-                vector::pop_back(&mut recipients)
-            );
-        };
+        transfer::public_transfer(
+            Ticket { id: object::new(ctx), amount }, 
+            recipient
+        );
     }
 
     // step 6: destroy the request

@@ -2,18 +2,81 @@
 
 [move]
 version = 0
-manifest_digest = "C64E403E3F08EB48FFB2C54FCABC42CE29F7ED3D0C18020D8BF33C7DCD2F154F"
-deps_digest = "060AD7E57DFB13104F21BE5F5C3759D03F0553FC3229247D9A7A6B45F50D03A3"
+manifest_digest = "3DB1D477848456119337843CF58F388260DA6E72D6EFE6433E04714C1E786CDC"
+deps_digest = "3C4103934B1E040BB6B23F1D610B4EF9F2F1166A50A104EADCF77467C004C600"
 
 dependencies = [
-  { name = "MoveStdlib" },
+  { name = "AftermathAmmLpCreation" },
   { name = "Sui" },
-  { name = "flowxswap" },
+]
+
+[[move.package]]
+name = "AftermathAmm"
+source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev = "main", subdir = "packages/amm/amm" }
+
+dependencies = [
+  { name = "AmmMath" },
+  { name = "ProtocolFeeVault" },
+  { name = "Sui" },
+]
+
+[[move.package]]
+name = "AftermathAmmInterface"
+source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev = "main", subdir = "packages/amm/amm-interface" }
+
+dependencies = [
+  { name = "AftermathAmm" },
+  { name = "Sui" },
+]
+
+[[move.package]]
+name = "AftermathAmmLpCreation"
+source = { local = "deps/aftermath" }
+
+dependencies = [
+  { name = "AftermathAmmInterface" },
+  { name = "Sui" },
+]
+
+[[move.package]]
+name = "AmmMath"
+source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev = "main", subdir = "packages/amm/amm-math" }
+
+dependencies = [
+  { name = "Sui" },
+]
+
+[[move.package]]
+name = "InsuranceFund"
+source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev = "main", subdir = "packages/amm/amm-insurance-fund" }
+
+dependencies = [
+  { name = "Sui" },
 ]
 
 [[move.package]]
 name = "MoveStdlib"
 source = { git = "https://github.com/MystenLabs/sui.git", rev = "framework/mainnet", subdir = "crates/sui-framework/packages/move-stdlib" }
+
+[[move.package]]
+name = "ProtocolFeeVault"
+source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev = "main", subdir = "packages/amm/amm-protocol-fee-vault" }
+
+dependencies = [
+  { name = "InsuranceFund" },
+  { name = "ReferralVault" },
+  { name = "Sui" },
+  { name = "Treasury" },
+  { name = "utilities" },
+]
+
+[[move.package]]
+name = "ReferralVault"
+source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev = "main", subdir = "packages/amm/amm-referral-vault" }
+
+dependencies = [
+  { name = "Sui" },
+]
 
 [[move.package]]
 name = "Sui"
@@ -24,14 +87,22 @@ dependencies = [
 ]
 
 [[move.package]]
-name = "flowxswap"
-source = { local = "deps/Flowx" }
+name = "Treasury"
+source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev = "main", subdir = "packages/amm/amm-treasury" }
+
+dependencies = [
+  { name = "Sui" },
+]
+
+[[move.package]]
+name = "utilities"
+source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev = "main", subdir = "packages/utility/utilities" }
 
 dependencies = [
   { name = "Sui" },
 ]
 
 [move.toolchain-version]
-compiler-version = "1.25.1"
+compiler-version = "1.27.2"
 edition = "legacy"
 flavor = "sui"

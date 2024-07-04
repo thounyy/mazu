@@ -25,6 +25,7 @@ module mazu_finance::mazu {
     const MAX_PUBLIC_SALE: u64 = 88_888_888_888_888_888; // 10%
     const MAX_MARKETING: u64 = 26_666_666_666_666_664; // 3%
     const MAX_COMMUNITY_INCENTIVES: u64 = 88_888_888_888_888_888; // 10%
+    const URL: vector<u8> = b"https://i.ibb.co/7KgZBFW/mazu-logo.png";
 
     // === Errors ===
 
@@ -71,7 +72,7 @@ module mazu_finance::mazu {
             b"MAZU", 
             b"Mazu", 
             b"Simplifying Yield Farming in the Sui Ecosystem",  
-            option::some(url::new_unsafe_from_bytes(b"https://twitter.com/mazufinance/photo")), 
+            option::some(url::new_unsafe_from_bytes(URL)), 
             ctx
         );
 
