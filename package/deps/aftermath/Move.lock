@@ -2,10 +2,10 @@
 
 [move]
 version = 2
-manifest_digest = "E2CDD58973AE6DE9EA4DD0B321E7BC589A8147F9EA054FDE4DB280666E333C27"
+manifest_digest = "46494B44DBD8CB3DF4A62639B2D94C95C5E50B8C4379C0811A35709194AEDADF"
 deps_digest = "3C4103934B1E040BB6B23F1D610B4EF9F2F1166A50A104EADCF77467C004C600"
 dependencies = [
-  { name = "AftermathAmmLpCreation" },
+  { name = "AftermathAmmInterface" },
   { name = "Sui" },
 ]
 
@@ -25,15 +25,6 @@ source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev 
 
 dependencies = [
   { name = "AftermathAmm" },
-  { name = "Sui" },
-]
-
-[[move.package]]
-name = "AftermathAmmLpCreation"
-source = { local = "deps/aftermath" }
-
-dependencies = [
-  { name = "AftermathAmmInterface" },
   { name = "Sui" },
 ]
 
@@ -102,14 +93,14 @@ dependencies = [
 ]
 
 [move.toolchain-version]
-compiler-version = "1.33.0"
-edition = "2024.beta"
+compiler-version = "1.29.0"
+edition = "legacy"
 flavor = "sui"
 
 [env]
 
 [env.mainnet]
 chain-id = "35834a8a"
-original-published-id = "0x9122346e9c20f8d52a343c1d66e5092cf5192d0bacd8082adaf5cc136f9dd6ff"
-latest-published-id = "0x9122346e9c20f8d52a343c1d66e5092cf5192d0bacd8082adaf5cc136f9dd6ff"
+original-published-id = "0xcc2fdcce83acdc63a607bea2d5a04511ec7a252d7bbe4087f9fd8f9eb3c1a9fa"
+latest-published-id = "0xcc2fdcce83acdc63a607bea2d5a04511ec7a252d7bbe4087f9fd8f9eb3c1a9fa"
 published-version = "1"

@@ -1,7 +1,7 @@
 [package]
 name = "AftermathAmmLpCreation"
 version = "0.0.1"
-published-at = "0xcc2fdcce83acdc63a607bea2d5a04511ec7a252d7bbe4087f9fd8f9eb3c1a9fa"
+# published-at = "0xcc2fdcce83acdc63a607bea2d5a04511ec7a252d7bbe4087f9fd8f9eb3c1a9fa"
 # upgrade-cap = "0x23e0a32d802cef5839a6e6223f0c676d29492d8a3dbc1c7d41cbbb121b58aa9a"
 
 # [objects]

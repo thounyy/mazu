@@ -1,9 +1,5 @@
 module mazu_finance::multisig {
     use std::string::String;
-    use std::vector;
-    use sui::transfer;
-    use sui::tx_context::{Self, TxContext};
-    use sui::object::{Self, UID};
     use sui::vec_set::{Self, VecSet};
     use sui::vec_map::{Self, VecMap};
     use sui::dynamic_field as df;
@@ -20,22 +16,22 @@ module mazu_finance::multisig {
 
     // === Structs ===
 
-    struct ModifyMultisigRequest has store { 
+    public struct ModifyMultisigRequest has store { 
         is_add: bool, // if true, add members, if false, remove members
         threshold: u64,
         addresses: vector<address>
     }
 
-    struct ProposalKey has copy, drop, store {}
+    public struct ProposalKey has copy, drop, store {}
 
-    struct Proposal has key, store {
+    public struct Proposal has key, store {
         id: UID,
         approved: VecSet<address>,
         epoch: u64,
         // DF: request
     }
 
-    struct Multisig has key {
+    public struct Multisig has key {
         id: UID,
         threshold: u64, // has to be <= members number
         members: VecSet<address>,
@@ -43,7 +39,7 @@ module mazu_finance::multisig {
     }
 
     fun init(ctx: &mut TxContext) {
-        let members = vec_set::empty();
+        let mut members = vec_set::empty();
         vec_set::insert(&mut members, tx_context::sender(ctx));
 
         transfer::share_object(
@@ -59,7 +55,7 @@ module mazu_finance::multisig {
     // === Public functions ===
 
     public fun clean_proposals(multisig: &mut Multisig, ctx: &mut TxContext) {
-        let i = vec_map::size(&multisig.proposals);
+        let mut i = vec_map::size(&multisig.proposals);
         while (i > 0) {
             let (name, proposal) = vec_map::get_entry_by_idx(&multisig.proposals, i - 1);
             if (tx_context::epoch(ctx) - proposal.epoch >= 7) {
@@ -87,7 +83,7 @@ module mazu_finance::multisig {
         assert!(threshold > 0, EThresholdNull);
         // verify proposed addresses match current list
         let len = vector::length(&addresses);
-        let i = 0;
+        let mut i = 0;
         while (i < len) {
             let addr = vector::borrow(&addresses, i);
             if (is_add) {
@@ -122,11 +118,11 @@ module mazu_finance::multisig {
         multisig: &mut Multisig,
         request: ModifyMultisigRequest,
     ) {
-        let ModifyMultisigRequest { is_add, threshold, addresses } = request;
+        let ModifyMultisigRequest { is_add, threshold, mut addresses } = request;
         multisig.threshold = threshold;
 
         let length = vector::length(&addresses);
-        let i = 0;
+        let mut i = 0;
         if (length == 0) { 
             return
         } else if (is_add) {
@@ -154,7 +150,7 @@ module mazu_finance::multisig {
     ) {
         assert_is_member(multisig, ctx);
 
-        let proposal = Proposal { 
+        let mut proposal = Proposal { 
             id: object::new(ctx),
             approved: vec_set::empty(), 
             epoch: tx_context::epoch(ctx) 
@@ -215,7 +211,7 @@ module mazu_finance::multisig {
     }
 
     public fun get_request<Request: store>(proposal: Proposal): Request {
-        let Proposal { id, approved: _, epoch: _ } = proposal;
+        let Proposal { mut id, approved: _, epoch: _ } = proposal;
         let request = df::remove(&mut id, ProposalKey {});
         object::delete(id);
         request

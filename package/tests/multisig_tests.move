@@ -1,7 +1,6 @@
 #[test_only]
 module mazu_finance::multisig_tests{
     use std::string;
-    use std::vector;
     use sui::test_scenario::{Self as ts, Scenario};
 
     use mazu_finance::mazu::{Self, Vault};    
@@ -11,13 +10,13 @@ module mazu_finance::multisig_tests{
     const ALICE: address = @0xCAFE;
     const BOB: address = @0xFACE;
 
-    struct Storage {
+    public struct Storage {
         vault: Vault,      
         multisig: Multisig,
     }
 
     fun init_scenario(): (Scenario, Storage) {
-        let scenario = ts::begin(OWNER);
+        let mut scenario = ts::begin(OWNER);
         let scen = &mut scenario;
         // initialize modules
         mazu::init_for_testing(ts::ctx(scen));
@@ -74,7 +73,7 @@ module mazu_finance::multisig_tests{
         multisig::complete_modify(&mut stor.multisig, request);
     }
 
-    fun increment_epoch(scen: &mut Scenario, epochs: u64) {
+    fun increment_epoch(scen: &mut Scenario, mut epochs: u64) {
         while (epochs > 0) {
             ts::next_epoch(scen, OWNER);
             epochs = epochs - 1;
@@ -89,8 +88,8 @@ module mazu_finance::multisig_tests{
 
     #[test]
     fun add_then_remove_members_same_threshold() {
-        let (scenario, storage) = init_scenario();
-        let members = vector::empty();
+        let (mut scenario, mut storage) = init_scenario();
+        let mut members = vector::empty();
         vector::push_back(&mut members, ALICE);
         vector::push_back(&mut members, BOB);
 
@@ -118,9 +117,9 @@ module mazu_finance::multisig_tests{
 
     #[test]
     fun add_then_remove_members_different_threshold() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, mut s) = init_scenario();
         let scen = &mut scenario;
-        let members = vector::empty();
+        let mut members = vector::empty();
         vector::push_back(&mut members, ALICE);
         vector::push_back(&mut members, BOB);
 
@@ -133,7 +132,7 @@ module mazu_finance::multisig_tests{
             members,
         );
         multisig::assert_multisig_data(&mut s.multisig, 3, 3, 0);
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
 
         let name = string::utf8(b"remove_members");
         multisig::propose_modify(
@@ -144,11 +143,11 @@ module mazu_finance::multisig_tests{
             members,
             ts::ctx(scen)
         );
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
         multisig::approve_proposal(&mut s.multisig, name, ts::ctx(scen));
-        let s = forward_scenario(scen, s, ALICE);
+        let mut s = forward_scenario(scen, s, ALICE);
         multisig::approve_proposal(&mut s.multisig, name, ts::ctx(scen));
-        let s = forward_scenario(scen, s, BOB);
+        let mut s = forward_scenario(scen, s, BOB);
         multisig::approve_proposal(&mut s.multisig, name, ts::ctx(scen));
         let proposal = multisig::execute_proposal(&mut s.multisig, name, ts::ctx(scen));
         let request = multisig::start_modify(proposal);
@@ -160,9 +159,9 @@ module mazu_finance::multisig_tests{
 
     #[test]
     fun separate_add_membmers_threshold_remove_members() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, mut s) = init_scenario();
         let scen = &mut scenario;
-        let members = vector::empty();
+        let mut members = vector::empty();
         vector::push_back(&mut members, ALICE);
         vector::push_back(&mut members, BOB);
 
@@ -175,7 +174,7 @@ module mazu_finance::multisig_tests{
             members,
         );
         multisig::assert_multisig_data(&mut s.multisig, 1, 3, 0);
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
 
         modify_multisig(
             scen,
@@ -186,7 +185,7 @@ module mazu_finance::multisig_tests{
             vector::empty(),
         );
         multisig::assert_multisig_data(&mut s.multisig, 3, 3, 0);
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
 
         let name = string::utf8(b"remove_members");
         multisig::propose_modify(
@@ -197,11 +196,11 @@ module mazu_finance::multisig_tests{
             members,
             ts::ctx(scen)
         );
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
         multisig::approve_proposal(&mut s.multisig, name, ts::ctx(scen));
-        let s = forward_scenario(scen, s, ALICE);
+        let mut s = forward_scenario(scen, s, ALICE);
         multisig::approve_proposal(&mut s.multisig, name, ts::ctx(scen));
-        let s = forward_scenario(scen, s, BOB);
+        let mut s = forward_scenario(scen, s, BOB);
         multisig::approve_proposal(&mut s.multisig, name, ts::ctx(scen));
         let proposal = multisig::execute_proposal(&mut s.multisig, name, ts::ctx(scen));
         let request = multisig::start_modify(proposal);
@@ -213,10 +212,10 @@ module mazu_finance::multisig_tests{
 
     #[test]
     fun delete_non_approved_proposal() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, s) = init_scenario();
         let scen = &mut scenario;
 
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
         let name = string::utf8(b"threshold");
         multisig::propose_modify(
             &mut s.multisig,
@@ -235,10 +234,10 @@ module mazu_finance::multisig_tests{
 
     #[test]
     fun remove_approval() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, s) = init_scenario();
         let scen = &mut scenario;
 
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
         let name = string::utf8(b"threshold");
         multisig::propose_modify(
             &mut s.multisig,
@@ -256,9 +255,9 @@ module mazu_finance::multisig_tests{
 
     #[test]
     fun clean_proposals() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, mut s) = init_scenario();
         let scen = &mut scenario;
-        let members = vector::empty();
+        let mut members = vector::empty();
         vector::push_back(&mut members, ALICE);
         vector::push_back(&mut members, BOB);
 
@@ -272,7 +271,7 @@ module mazu_finance::multisig_tests{
             ts::ctx(scen)
         );
         multisig::assert_multisig_data(&mut s.multisig, 1, 1, 1);
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
         // epoch 3
         increment_epoch(scen, 3);
         multisig::propose_modify(
@@ -284,7 +283,7 @@ module mazu_finance::multisig_tests{
             ts::ctx(scen)
         );
         multisig::assert_multisig_data(&mut s.multisig, 1, 1, 2);
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
         // epoch 7
         increment_epoch(scen, 4);
         mazu::propose_transfer(
@@ -296,7 +295,7 @@ module mazu_finance::multisig_tests{
             ts::ctx(scen)
         );
         multisig::assert_multisig_data(&mut s.multisig, 1, 1, 3);
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
         // clean the first one
         multisig::clean_proposals(&mut s.multisig, ts::ctx(scen));
         multisig::assert_multisig_data(&mut s.multisig, 1, 1, 2);
@@ -311,7 +310,7 @@ module mazu_finance::multisig_tests{
     #[test]
     #[expected_failure(abort_code = 0x2::vec_map::EKeyAlreadyExists)]
     fun cannot_add_twice_same_name() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, mut s) = init_scenario();
         let scen = &mut scenario;
 
         multisig::propose_modify(
@@ -337,7 +336,7 @@ module mazu_finance::multisig_tests{
     #[test]
     #[expected_failure(abort_code = mazu_finance::multisig::EThresholdTooHigh)]
     fun cannot_set_threshold_too_high() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, mut s) = init_scenario();
         let scen = &mut scenario;
 
         modify_multisig(
@@ -355,7 +354,7 @@ module mazu_finance::multisig_tests{
     #[test]
     #[expected_failure(abort_code = mazu_finance::multisig::EThresholdNull)]
     fun cannot_set_threshold_null() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, mut s) = init_scenario();
         let scen = &mut scenario;
 
         modify_multisig(
@@ -373,9 +372,9 @@ module mazu_finance::multisig_tests{
     #[test]
     #[expected_failure(abort_code = mazu_finance::multisig::EAlreadyMember)]
     fun cannot_add_already_existing_members() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, mut s) = init_scenario();
         let scen = &mut scenario;
-        let members = vector::empty();
+        let mut members = vector::empty();
         vector::push_back(&mut members, ALICE);
         vector::push_back(&mut members, OWNER);
 
@@ -394,9 +393,9 @@ module mazu_finance::multisig_tests{
     #[test]
     #[expected_failure(abort_code = mazu_finance::multisig::ENotMember)]
     fun cannot_remove_non_existing_members() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, mut s) = init_scenario();
         let scen = &mut scenario;
-        let members = vector::empty();
+        let mut members = vector::empty();
         vector::push_back(&mut members, ALICE);
         vector::push_back(&mut members, BOB);
 
@@ -415,10 +414,10 @@ module mazu_finance::multisig_tests{
     #[test]
     #[expected_failure(abort_code = mazu_finance::multisig::ECallerIsNotMember)]
     fun non_member_cannot_propose() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, s) = init_scenario();
         let scen = &mut scenario;
 
-        let s = forward_scenario(scen, s, ALICE);
+        let mut s = forward_scenario(scen, s, ALICE);
         let name = string::utf8(b"threshold");
         multisig::propose_modify(
             &mut s.multisig,
@@ -439,10 +438,10 @@ module mazu_finance::multisig_tests{
     #[test]
     #[expected_failure(abort_code = mazu_finance::multisig::EThresholdNotReached)]
     fun cannot_execute_threshold_not_reached() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, s) = init_scenario();
         let scen = &mut scenario;
 
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
         let name = string::utf8(b"threshold");
         multisig::propose_modify(
             &mut s.multisig,
@@ -462,10 +461,10 @@ module mazu_finance::multisig_tests{
     #[test]
     #[expected_failure(abort_code = mazu_finance::multisig::EProposalNotEmpty)]
     fun cannot_delete_approved_proposal() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, s) = init_scenario();
         let scen = &mut scenario;
 
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
         let name = string::utf8(b"threshold");
         multisig::propose_modify(
             &mut s.multisig,

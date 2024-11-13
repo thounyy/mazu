@@ -1,30 +1,23 @@
 module mazu_finance::mazu {
-    use std::option;
     use std::string::{Self, String};
     use sui::coin::{Self, Coin, TreasuryCap, CoinMetadata};
     use sui::balance::Supply;
-    use sui::transfer;
     use sui::url;
-    use sui::object::{Self, UID};
-    use sui::tx_context::{Self, TxContext};
 
     use mazu_finance::multisig::{Self, Multisig, Proposal};
     use mazu_finance::math;
 
-    friend mazu_finance::airdrop;
-    friend mazu_finance::staking;
-    friend mazu_finance::vesting;
-
     // === Constants ===
 
-    // const MAX_SUPPLY: u64 = 888_888_888_888_888_888;
+    // const MAX_SUPPLY: u64 = 888_888_888__888_888_888; // 100%
+    // const TOTAL_COMMUNITY_INCENTIVES: u64 = 444_444_444__444_444_444; // 50%
+    const MAX_COMMUNITY_INCENTIVES: u64 = 124_444_444__444_444_444 + 94 + 90; // 14% (+ rest from staking)
     
-    const MAX_TEAM: u64 = 88_888_888_888_888_888 * 2; // 20%
-    const MAX_STRATEGY: u64 = 142_222_222_222_222_222; // 16%
-    const MAX_PRIVATE_SALE: u64 = 88_888_888_888_888_888; // 10%
-    const MAX_PUBLIC_SALE: u64 = 88_888_888_888_888_888; // 10%
-    const MAX_MARKETING: u64 = 26_666_666_666_666_664; // 3%
-    const MAX_COMMUNITY_INCENTIVES: u64 = 88_888_888_888_888_888; // 10%
+    const MAX_TEAM: u64 = 106_666_666__666_666_667; // 12%
+    const MAX_STRATEGY: u64 = 128_000_000__000_000_000; // 14.4%
+    const MAX_PRIVATE_SALE: u64 = 75_822_222__222_222_222; // 8.53%
+    const MAX_PUBLIC_SALE: u64 = 133_333_333__333_333_333; // 15%
+    const BURN_AMOUNT: u64 = 6_222_222__222_222_222; // 0.07%
     const URL: vector<u8> = b"https://i.ibb.co/7KgZBFW/mazu-logo.png";
 
     // === Errors ===
@@ -34,22 +27,22 @@ module mazu_finance::mazu {
 
     // === Structs ===
 
-    struct MAZU has drop {}
+    public struct MAZU has drop {}
 
-    struct TransferRequest has store {
+    public struct TransferRequest has store {
         stakeholder: String, // one of the vault fields
         amount: u64,
         recipient: address,
     }
 
-    struct UpdateMetadataRequest has store { 
+    public struct UpdateMetadataRequest has store { 
         name: String,
         symbol: String,
         description: String,
         icon_url: String,
     }
 
-    struct Vault has key {
+    public struct Vault has key {
         id: UID,
         cap: TreasuryCap<MAZU>,
         start: u64, // start epoch
@@ -58,7 +51,6 @@ module mazu_finance::mazu {
         strategy: u64,
         private_sale: u64,
         public_sale: u64,
-        marketing: u64,
     }
 
     #[allow(lint(share_owned))]
@@ -66,7 +58,7 @@ module mazu_finance::mazu {
         otw: MAZU, 
         ctx: &mut TxContext
     ) {
-        let (cap, metadata) = coin::create_currency<MAZU>(
+        let (mut cap, metadata) = coin::create_currency<MAZU>(
             otw, 
             9, 
             b"MAZU", 
@@ -75,6 +67,8 @@ module mazu_finance::mazu {
             option::some(url::new_unsafe_from_bytes(URL)), 
             ctx
         );
+
+        cap.mint_and_transfer(BURN_AMOUNT, @0x0, ctx);
 
         transfer::public_share_object(metadata);
         
@@ -87,7 +81,6 @@ module mazu_finance::mazu {
             strategy: MAX_STRATEGY,
             private_sale: MAX_PRIVATE_SALE,
             public_sale: MAX_PUBLIC_SALE,
-            marketing: MAX_MARKETING,
         });
     }
 
@@ -175,15 +168,15 @@ module mazu_finance::mazu {
 
     // === Friend functions ===    
     
-    public(friend) fun cap_mut(vault: &mut Vault): &mut TreasuryCap<MAZU> {
+    public(package) fun cap_mut(vault: &mut Vault): &mut TreasuryCap<MAZU> {
         &mut vault.cap
     }
     
-    public(friend) fun supply_mut(vault: &mut Vault): &mut Supply<MAZU> {
+    public(package) fun supply_mut(vault: &mut Vault): &mut Supply<MAZU> {
         coin::supply_mut(&mut vault.cap)
     }
 
-    public(friend) fun handle_stakeholder(
+    public(package) fun handle_stakeholder(
         vault: &mut Vault, 
         stakeholder: String, 
         amount: u64, 
@@ -227,31 +220,25 @@ module mazu_finance::mazu {
                 ENotEnoughFundsUnlocked
             );
             vault.public_sale = math::sub(vault.public_sale, amount);
-        } else if (stakeholder == string::utf8(b"marketing")) {
-            assert!(
-                math::sub(unlocked_amount, math::sub(MAX_MARKETING, vault.marketing)) >= amount, 
-                ENotEnoughFundsUnlocked
-            );
-            vault.marketing = math::sub(vault.marketing, amount);
         };
     }
 
     // returns (amount TGE, amount vesting, period vesting)
-    public(friend) fun vesting_for_stakeholder(stakeholder: String): (u64, u64, u64) {
-        let (tge, vesting, period) = (0, 0, 0);
+    public(package) fun vesting_for_stakeholder(stakeholder: String): (u64, u64, u64) {
+        let (mut tge, mut vesting, mut period) = (0, 0, 0);
 
         if (stakeholder == string::utf8(b"community")) {
-            tge = MAX_COMMUNITY_INCENTIVES / 10;
+            tge = MAX_COMMUNITY_INCENTIVES / 20;
             vesting = MAX_COMMUNITY_INCENTIVES - tge;
-            period = 548;
+            period = 1096;
         } else if (stakeholder == string::utf8(b"team")) {
             tge = MAX_TEAM;
             period = 1;
             // vesting managed in vesting module
         } else if (stakeholder == string::utf8(b"strategy")) {
-            tge = MAX_STRATEGY / 2;
-            vesting = tge;
-            period = 548;
+            tge = MAX_STRATEGY;
+            period = 1;
+            // vesting = 0;
         } else if (stakeholder == string::utf8(b"private_sale")) {
             tge = MAX_PRIVATE_SALE;
             period = 1;
@@ -260,10 +247,6 @@ module mazu_finance::mazu {
             tge = MAX_PUBLIC_SALE; 
             period = 1;
             // vesting = 0
-        } else if (stakeholder == string::utf8(b"marketing")) {
-            tge = MAX_MARKETING / 2;
-            vesting = tge;
-            period = 548;
         };
 
         (tge, vesting, period)
@@ -277,8 +260,7 @@ module mazu_finance::mazu {
             // name == string::utf8(b"team") ||
             name == string::utf8(b"strategy") ||
             // name == string::utf8(b"private_sale") ||
-            name == string::utf8(b"public_sale") ||
-            name == string::utf8(b"marketing"),
+            name == string::utf8(b"public_sale"),
             EStakeholderNotInVault
         )
     }

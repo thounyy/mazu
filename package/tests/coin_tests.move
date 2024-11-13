@@ -2,7 +2,6 @@
 module mazu_finance::mazu_tests{
     use std::string;
     use std::ascii;
-    use std::option;
     use sui::url;
     use sui::test_scenario::{Self as ts, Scenario};
     use sui::coin::{Self, Coin, CoinMetadata};
@@ -10,12 +9,12 @@ module mazu_finance::mazu_tests{
     use mazu_finance::mazu::{Self, Vault, MAZU};    
     use mazu_finance::multisig::{Self, Multisig};
 
-    // const MAX_TEAM: u64 = 88_888_888_888_888_888 * 2; // 20%
-    const MAX_STRATEGY: u64 = 142_222_222_222_222_222; // 16%
-    // const MAX_PRIVATE_SALE: u64 = 88_888_888_888_888_888; // 10%
-    const MAX_PUBLIC_SALE: u64 = 88_888_888_888_888_888; // 10%
-    const MAX_MARKETING: u64 = 26_666_666_666_666_664; // 3%
-    const MAX_COMMUNITY_INCENTIVES: u64 = 88_888_888_888_888_888; // 10%    
+    const MAX_COMMUNITY_INCENTIVES: u64 = 124_444_444__444_444_444 + 90 + 94; // 14%
+    // const MAX_TEAM: u64 = 106_666_666__666_666_667; // 12%
+    const MAX_STRATEGY: u64 = 128_000_000__000_000_000; // 14.4%
+    // const MAX_PRIVATE_SALE: u64 = 75_822_222__222_222_222; // 8.53%
+    const MAX_PUBLIC_SALE: u64 = 133_333_333__333_333_333; // 15%
+    const BURN_AMOUNT: u64 = 6_222_222__222_222_222; // 0.07%  
     
     const OWNER: address = @0xBABE;
     const COMMUNITY: address = @0x1;
@@ -23,16 +22,15 @@ module mazu_finance::mazu_tests{
     const STRATEGY: address = @0x3;
     const PRIVATE_SALE: address = @0x4;
     const PUBLIC_SALE: address = @0x5;
-    const MARKETING: address = @0x6;
 
-    struct Storage {
+    public struct Storage {
         vault: Vault,
         metadata: CoinMetadata<MAZU>,        
         multisig: Multisig,
     }
 
     fun init_scenario(): (Scenario, Storage) {
-        let scenario = ts::begin(OWNER);
+        let mut scenario = ts::begin(OWNER);
         let scen = &mut scenario;
         // initialize modules
         mazu::init_for_testing(ts::ctx(scen));
@@ -109,14 +107,14 @@ module mazu_finance::mazu_tests{
         mazu::complete_transfer(&mut stor.vault, request, ts::ctx(scen));
     }
 
-    fun handle_and_assert_coin(total: u64, amount: u64, addr: address, scen: &Scenario) {
+    fun handle_and_assert_coin(mut total: u64, amount: u64, addr: address, scen: &Scenario) {
         let mazu = ts::take_from_address<Coin<MAZU>>(scen, addr);
         total = total + amount;
         assert!(coin::value(&mazu) == total, 0);
         ts::return_to_address(addr, mazu);
     }
 
-    fun increment_epoch(scen: &mut Scenario, epochs: u64) {
+    fun increment_epoch(scen: &mut Scenario, mut epochs: u64) {
         while (epochs > 0) {
             ts::next_epoch(scen, OWNER);
             epochs = epochs - 1;
@@ -126,12 +124,17 @@ module mazu_finance::mazu_tests{
     #[test]
     fun publish_package() {
         let (scenario, storage) = init_scenario();
+
+        let coin = scenario.take_from_address<Coin<MAZU>>(@0x0);
+        assert!(coin::value(&coin) == BURN_AMOUNT, 0);
+        ts::return_to_address(@0x0, coin);
+
         complete_scenario(scenario, storage);
     }
 
     #[test]
     fun update_metadata_normal() {
-        let (scenario, storage) = init_scenario();
+        let (mut scenario, mut storage) = init_scenario();
         update_metadata(&mut scenario, &mut storage);
         assert!(
             coin::get_name(&storage.metadata) == string::utf8(b"new name")
@@ -145,10 +148,10 @@ module mazu_finance::mazu_tests{
 
     #[test]
     fun should_burn() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, mut s) = init_scenario();
         let scen = &mut scenario;
         transfer(scen, &mut s, b"public_sale", PUBLIC_SALE, 1);   
-        let s = forward_scenario(scen, s, PUBLIC_SALE);
+        let mut s = forward_scenario(scen, s, PUBLIC_SALE);
         let mazu = ts::take_from_address<Coin<MAZU>>(scen, PUBLIC_SALE);
         mazu::burn(&mut s.vault, mazu);
         complete_scenario(scenario, s);
@@ -156,92 +159,63 @@ module mazu_finance::mazu_tests{
 
     #[test]
     fun transfer_everything_normal() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, mut s) = init_scenario();
         let scen = &mut scenario;
         let total = 0;
 
         // === TGE ===
         // community
-        let tge_community = MAX_COMMUNITY_INCENTIVES / 10;
+        let tge_community = MAX_COMMUNITY_INCENTIVES / 20;
         transfer(scen, &mut s, b"community", COMMUNITY, tge_community);        
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
         handle_and_assert_coin(total, tge_community, COMMUNITY, scen);
         // strategy
-        let tge_strategy = MAX_STRATEGY / 2;
+        let tge_strategy = MAX_STRATEGY;
         transfer(scen, &mut s, b"strategy", STRATEGY, tge_strategy);        
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
         handle_and_assert_coin(total, tge_strategy, STRATEGY, scen);
         // public
         let tge_public = MAX_PUBLIC_SALE;
         transfer(scen, &mut s, b"public_sale", PUBLIC_SALE, tge_public);        
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
         handle_and_assert_coin(total, tge_public, PUBLIC_SALE, scen);
-        // marketing
-        let tge_marketing = MAX_MARKETING / 4;
-        transfer(scen, &mut s, b"marketing", MARKETING, tge_marketing);        
-        let s = forward_scenario(scen, s, OWNER);
-        handle_and_assert_coin(total, tge_marketing, MARKETING, scen);
-
-        // === 9 months ===
-        increment_epoch(scen, 274);
-        // community
-        let nine_community = (MAX_COMMUNITY_INCENTIVES - tge_community) / 2;
-        transfer(scen, &mut s, b"community", COMMUNITY, nine_community);        
-        let s = forward_scenario(scen, s, OWNER);
-        handle_and_assert_coin(total, nine_community, COMMUNITY, scen);
-        // strategy
-        let nine_strategy = (MAX_STRATEGY - tge_strategy) / 2;
-        transfer(scen, &mut s, b"strategy", STRATEGY, nine_strategy);        
-        let s = forward_scenario(scen, s, OWNER);
-        handle_and_assert_coin(total, nine_strategy, STRATEGY, scen);
-        // marketing
-        let nine_marketing = (MAX_MARKETING - tge_marketing) / 2;
-        transfer(scen, &mut s, b"marketing", MARKETING, nine_marketing);        
-        let s = forward_scenario(scen, s, OWNER);
-        handle_and_assert_coin(total, nine_marketing, MARKETING, scen);
 
         // === 18 months ===
-        increment_epoch(scen, 274);
+        increment_epoch(scen, 1096 / 2);
         // community
-        let eighteen_community = (MAX_COMMUNITY_INCENTIVES - tge_community - nine_community);
-        transfer(scen, &mut s, b"community", COMMUNITY, eighteen_community);        
+        let community_18 = (MAX_COMMUNITY_INCENTIVES - tge_community) / 2;
+        transfer(scen, &mut s, b"community", COMMUNITY, community_18);        
+        let mut s = forward_scenario(scen, s, OWNER);
+        handle_and_assert_coin(total, community_18, COMMUNITY, scen);
+
+        // === 36 months ===
+        increment_epoch(scen, 1096 / 2);
+        // community
+        let community_36 = (MAX_COMMUNITY_INCENTIVES - tge_community - community_18);
+        transfer(scen, &mut s, b"community", COMMUNITY, community_36);        
         let s = forward_scenario(scen, s, OWNER);
-        handle_and_assert_coin(total, eighteen_community, COMMUNITY, scen);
-        // strategy
-        let eighteen_strategy = (MAX_STRATEGY - tge_strategy - nine_strategy);
-        transfer(scen, &mut s, b"strategy", STRATEGY, eighteen_strategy);        
-        let s = forward_scenario(scen, s, OWNER);
-        handle_and_assert_coin(total, eighteen_strategy, STRATEGY, scen);
-        // marketing
-        let eighteen_marketing = (MAX_MARKETING - tge_marketing - nine_marketing);
-        transfer(scen, &mut s, b"marketing", MARKETING, eighteen_marketing);        
-        let s = forward_scenario(scen, s, OWNER);
-        handle_and_assert_coin(total, eighteen_marketing, MARKETING, scen);
+        handle_and_assert_coin(total, community_36, COMMUNITY, scen);
 
         complete_scenario(scenario, s);
     }
 
     #[test]
     fun transfer_everything_normal_after_vesting_ended() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, mut s) = init_scenario();
         let scen = &mut scenario;
-        // === 18 months ===
-        increment_epoch(scen, 1000);
+
+        increment_epoch(scen, 1200);
         // community
         let mazu_community = MAX_COMMUNITY_INCENTIVES;
         transfer(scen, &mut s, b"community", COMMUNITY, mazu_community);        
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
         // public
         let mazu_public = MAX_PUBLIC_SALE;
         transfer(scen, &mut s, b"public_sale", PUBLIC_SALE, mazu_public);        
-        let s = forward_scenario(scen, s, OWNER);
+        let mut s = forward_scenario(scen, s, OWNER);
         // strategy
         let mazu_strategy = MAX_STRATEGY;
         transfer(scen, &mut s, b"strategy", STRATEGY, mazu_strategy);        
-        let s = forward_scenario(scen, s, OWNER);
-        // marketing
-        let mazu_marketing = MAX_MARKETING;
-        transfer(scen, &mut s, b"marketing", MARKETING, mazu_marketing);        
         let s = forward_scenario(scen, s, OWNER);
 
         complete_scenario(scenario, s);
@@ -250,10 +224,10 @@ module mazu_finance::mazu_tests{
     #[test]    
     #[expected_failure(abort_code = mazu_finance::mazu::ENotEnoughFundsUnlocked)]
     fun cannot_transfer_more_community() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, mut s) = init_scenario();
         let scen = &mut scenario;
-        // === 18 months ===
-        increment_epoch(scen, 548);
+
+        increment_epoch(scen, 1200);
         // community
         let mazu_community = MAX_COMMUNITY_INCENTIVES + 1;
         transfer(scen, &mut s, b"community", COMMUNITY, mazu_community);        
@@ -265,10 +239,10 @@ module mazu_finance::mazu_tests{
     #[test]
     #[expected_failure(abort_code = mazu_finance::mazu::ENotEnoughFundsUnlocked)]
     fun cannot_transfer_more_public_sale() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, mut s) = init_scenario();
         let scen = &mut scenario;
-        // === 18 months ===
-        increment_epoch(scen, 548);
+
+        increment_epoch(scen, 10);
         // public
         let mazu_public = MAX_PUBLIC_SALE + 1;
         transfer(scen, &mut s, b"public_sale", PUBLIC_SALE, mazu_public);        
@@ -280,10 +254,10 @@ module mazu_finance::mazu_tests{
     #[test]
     #[expected_failure(abort_code = mazu_finance::mazu::ENotEnoughFundsUnlocked)]
     fun cannot_transfer_more_strategy() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, mut s) = init_scenario();
         let scen = &mut scenario;
-        // === 18 months ===
-        increment_epoch(scen, 548);
+
+        increment_epoch(scen, 10);
         // strategy
         let mazu_strategy = MAX_STRATEGY + 1;
         transfer(scen, &mut s, b"strategy", STRATEGY, mazu_strategy);        
@@ -293,27 +267,12 @@ module mazu_finance::mazu_tests{
     }
 
     #[test]
-    #[expected_failure(abort_code = mazu_finance::mazu::ENotEnoughFundsUnlocked)]
-    fun cannot_transfer_more_marketing() {
-        let (scenario, s) = init_scenario();
-        let scen = &mut scenario;
-        // === 18 months ===
-        increment_epoch(scen, 548);
-        // marketing
-        let mazu_marketing = MAX_MARKETING + 1;
-        transfer(scen, &mut s, b"marketing", MARKETING, mazu_marketing);        
-        let s = forward_scenario(scen, s, OWNER);
-
-        complete_scenario(scenario, s);
-    }
-
-    #[test]
     #[expected_failure(abort_code = mazu_finance::mazu::EStakeholderNotInVault)]
     fun cannot_transfer_private_sale() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, mut s) = init_scenario();
         let scen = &mut scenario;
-        // === 18 months ===
-        increment_epoch(scen, 548);
+
+        increment_epoch(scen, 10);
         // private sale
         let mazu_private_sale = 1;
         transfer(scen, &mut s, b"private_sale", PRIVATE_SALE, mazu_private_sale);        
@@ -325,10 +284,10 @@ module mazu_finance::mazu_tests{
     #[test]
     #[expected_failure(abort_code = mazu_finance::mazu::EStakeholderNotInVault)]
     fun cannot_transfer_team() {
-        let (scenario, s) = init_scenario();
+        let (mut scenario, mut s) = init_scenario();
         let scen = &mut scenario;
-        // === 18 months ===
-        increment_epoch(scen, 548);
+
+        increment_epoch(scen, 10);
         // private sale
         let mazu_team = 1;
         transfer(scen, &mut s, b"team", TEAM, mazu_team);        

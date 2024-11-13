@@ -1,26 +1,22 @@
 module mazu_finance::airdrop {
     use std::string::String;
-    use std::vector;
-    use sui::object::{Self, UID};
     use sui::coin::{Self, Coin};
-    use sui::tx_context::TxContext;
-    use sui::transfer;
 
     use mazu_finance::mazu::{Self, MAZU, Vault};
     use mazu_finance::multisig::{Self, Multisig, Proposal};
     
-    const MAX_AIRDROP_SUPPLY: u64 = 8_888_888_888_888_888 * 2; // 2%
+    const MAX_AIRDROP_SUPPLY: u64 = 8_888_888_888_888_888; // 1%
 
     const ENoMoreCoinsToClaim: u64 = 0;
 
-    struct Request has store {}
+    public struct Request has store {}
 
-    struct Ticket has key, store { 
+    public struct Ticket has key, store { 
         id: UID,
         amount: u64,
     }
 
-    struct Airdrop has key {
+    public struct Airdrop has key {
         id: UID,
         supply: u64
     }

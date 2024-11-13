@@ -1,11 +1,7 @@
 module mazu_finance::vesting {
     use std::string::{Self, String};
-    use std::vector;
-    use sui::object::{Self, UID};
     use sui::coin::{Self, Coin};
     use sui::balance::{Self, Balance};
-    use sui::tx_context::{Self, TxContext};
-    use sui::transfer;
 
     use mazu_finance::mazu::{Self, MAZU, Vault};
     use mazu_finance::multisig::{Self, Multisig, Proposal};
@@ -19,13 +15,13 @@ module mazu_finance::vesting {
     // const MAX_TEAM: u64 = 88_888_888_888_888_888 * 2; // 20%
     // const MAX_PRIVATE_SALE: u64 = 88_888_888_888_888_888; // 10%
 
-    struct Request has store { 
+    public struct Request has store { 
         stakeholder: String, // private_sale or team
         amounts: vector<u64>,
         addresses: vector<address>,
     }
 
-    struct Locked<phantom MAZU> has key {
+    public struct Locked<phantom MAZU> has key {
         id: UID,
         // vested mazu coins remaining
         balance: Balance<MAZU>,
@@ -38,6 +34,15 @@ module mazu_finance::vesting {
     }
 
     // === Public functions ===
+
+    public entry fun claim(locked: &mut Locked<MAZU>, ctx: &mut TxContext) {
+        let schedule_epoch = tx_context::epoch(ctx) - locked.start;
+        let total_unlocked = math::mul_div_down(locked.allocation, schedule_epoch, locked.end - locked.start);
+        let claimed = math::sub(locked.allocation, balance::value(&locked.balance));
+                
+        let coin = coin::from_balance(balance::split(&mut locked.balance, math::sub(total_unlocked, claimed)), ctx);
+        transfer::public_transfer(coin, tx_context::sender(ctx));
+    }
 
     public fun unlock(locked: &mut Locked<MAZU>, amount: u64, ctx: &mut TxContext): Coin<MAZU> {
         let schedule_epoch = tx_context::epoch(ctx) - locked.start;
@@ -87,19 +92,23 @@ module mazu_finance::vesting {
 
     // step 5: create (and send via PTB) as many Locked mazu as needed (according to max)
     public fun new(request: &mut Request, vault: &mut Vault, ctx: &mut TxContext) {
-        let epoch = tx_context::epoch(ctx);
-        let end = if (request.stakeholder == string::utf8(b"private_sale")) {
-            epoch + 274
-        } else { epoch + 456 };
+        let (mut start, mut end) = (0, 0);
+        if (request.stakeholder == string::utf8(b"private_sale")) {
+            start = ctx.epoch();
+            end = ctx.epoch() + 365;
+        } else { 
+            start = ctx.epoch() + 92;
+            end = ctx.epoch() + 365;
+        };
 
         while (vector::length(&request.addresses) != 0) {
-            let amount = vector::pop_back(&mut request.amounts);
+            let mut amount = vector::pop_back(&mut request.amounts);
             let addr = vector::pop_back(&mut request.addresses);
 
             mazu::handle_stakeholder(vault, request.stakeholder, amount, ctx);
 
             if (request.stakeholder == string::utf8(b"private_sale")) {
-                let unlocked_amount = amount / 5;
+                let unlocked_amount = amount * 15 / 100;
                 let coins = coin::mint(mazu::cap_mut(vault), unlocked_amount, ctx);
                 transfer::public_transfer(coins, addr);
 
@@ -111,7 +120,7 @@ module mazu_finance::vesting {
                     id: object::new(ctx), 
                     balance: balance::increase_supply(mazu::supply_mut(vault), amount), 
                     allocation: amount,
-                    start: epoch, 
+                    start, 
                     end 
                 },
                 addr

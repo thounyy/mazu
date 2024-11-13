@@ -1,12 +1,7 @@
 module mazu_finance::staking {
-    use std::vector;
     use std::string::String;
     use sui::coin::{Self, Coin};
     use sui::balance::{Self, Balance};
-    use sui::sui::SUI;
-    use sui::transfer;
-    use sui::tx_context::TxContext;
-    use sui::object::{Self, UID};
     use sui::dynamic_field as df;
     use sui::clock::{Self, Clock};
 
@@ -34,12 +29,12 @@ module mazu_finance::staking {
 
     // === Structs ===
 
-    struct StartRequest has store {}
+    public struct StartRequest has store {}
 
-    struct PoolKey<phantom T> has copy, drop, store {}
+    public struct PoolKey<phantom T> has copy, drop, store {}
 
     // shared
-    struct Staking has key { 
+    public struct Staking has key { 
         id: UID,
         version: u64,
         start: u64, // start timestamp to get week
@@ -47,7 +42,7 @@ module mazu_finance::staking {
         // DF Pool
     }
 
-    struct Pool has store {
+    public struct Pool has store {
         total_value: u64, // total value (amount * boost) staked
         total_staked: u64, // total amount staked
         emissions: vector<u64>, // per week
@@ -56,7 +51,7 @@ module mazu_finance::staking {
     }
 
     // owned
-    struct Staked<phantom T> has key, store {
+    public struct Staked<phantom T> has key, store {
         id: UID,
         end: u64, // end timestamp in ms (same if no lock)
         value: u64, // coin_amount * boost
@@ -65,7 +60,7 @@ module mazu_finance::staking {
     }
 
     fun init(ctx: &mut TxContext) {
-        let staking = Staking { 
+        let mut staking = Staking { 
             id: object::new(ctx),
             version: VERSION,
             start: 0,
@@ -113,7 +108,7 @@ module mazu_finance::staking {
         assert!(coin::value(&coin) != 0, ECannotStakeZero);
 
         let now = clock::timestamp_ms(clock);
-        let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
+        let pool: &mut Pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
         let value = math::mul_div_down(coin::value(&coin), get_boost(weeks), MUL);
 
         update_rewards(pool, now, staking.start);
@@ -139,7 +134,7 @@ module mazu_finance::staking {
         assert_active(staking);
         assert_last_version(staking);
         let now = clock::timestamp_ms(clock);
-        let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
+        let pool: &mut Pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
         // update global and user indexes
         update_rewards(pool, now, staking.start);
         // get rewards
@@ -171,7 +166,7 @@ module mazu_finance::staking {
             EStakedLocked
         );
 
-        let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
+        let pool: &mut Pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
         // update global and user indexes
         update_rewards(pool, now, staking.start);
         // get rewards
@@ -193,7 +188,7 @@ module mazu_finance::staking {
         clock: &Clock,
     ): u64 {
         assert_last_version(staking);
-        let pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
+        let pool: &mut Pool = df::borrow_mut(&mut staking.id, PoolKey<T> {});
         update_rewards(pool, clock::timestamp_ms(clock), staking.start);
         let rewards = math::mul_div_down(
             (math::sub_u128(pool.reward_index, staked.reward_index) as u64), 
@@ -242,7 +237,8 @@ module mazu_finance::staking {
         start: u64,
     ) {
         if (pool.total_value == 0) return;
-
+        std::debug::print(&b"get_emitted".to_string());
+        std::debug::print(&get_emitted(pool, start, now));
         let claimable_reward_index = 
             (get_emitted(pool, start, now) as u128) * 
             (MUL as u128) / 
@@ -254,10 +250,10 @@ module mazu_finance::staking {
 
     // get mazu emission for current week 
     fun get_emitted(pool: &Pool, start: u64, now: u64): u64 {
-        let last_week = math::min((pool.last_updated - start) / MS_IN_WEEK, 71);
-        let current_week = math::min((now - start) / MS_IN_WEEK, 71);
-        let emitted = 0;
-        let i = last_week;
+        let last_week = math::min((pool.last_updated - start) / MS_IN_WEEK, 143);
+        let current_week = math::min((now - start) / MS_IN_WEEK, 143);
+        let mut emitted = 0;
+        let mut i = last_week;
 
         while (i < current_week + 1) {
             let emitted_this_week = *vector::borrow<u64>(&pool.emissions, i);
@@ -306,157 +302,301 @@ module mazu_finance::staking {
     }
 
     fun init_mazu_emissions(): vector<u64> {
-        let v = vector::empty();
-        vector::push_back(&mut v, 2666666670000000);
-        vector::push_back(&mut v, 1777777780000000);
-        vector::push_back(&mut v, 1688888890000000);
-        vector::push_back(&mut v, 1555555560000000);
-        vector::push_back(&mut v, 1444444440000000);
-        vector::push_back(&mut v, 1333333330000000);
-        vector::push_back(&mut v, 1222222220000000);
-        vector::push_back(&mut v, 1111111110000000);
-        vector::push_back(&mut v, 1000000000000000);
-        vector::push_back(&mut v, 888888890000000);
-        vector::push_back(&mut v, 888888890000000);
-        vector::push_back(&mut v, 888888890000000);
-        vector::push_back(&mut v, 777777780000000);
-        vector::push_back(&mut v, 777777780000000);
-        vector::push_back(&mut v, 777777780000000);
-        vector::push_back(&mut v, 777777780000000);
-        vector::push_back(&mut v, 777777780000000);
-        vector::push_back(&mut v, 666666670000000);
-        vector::push_back(&mut v, 666666670000000);
-        vector::push_back(&mut v, 666666670000000);
-        vector::push_back(&mut v, 666666670000000);
-        vector::push_back(&mut v, 666666670000000);
-        vector::push_back(&mut v, 666666670000000);
-        vector::push_back(&mut v, 666666670000000);
-        vector::push_back(&mut v, 666666670000000);
-        vector::push_back(&mut v, 666666670000000);
-        vector::push_back(&mut v, 444444440000000);
-        vector::push_back(&mut v, 444444440000000);
-        vector::push_back(&mut v, 444444440000000);
-        vector::push_back(&mut v, 444444440000000);
-        vector::push_back(&mut v, 444444440000000);
-        vector::push_back(&mut v, 444444440000000);
-        vector::push_back(&mut v, 444444440000000);
-        vector::push_back(&mut v, 444444440000000);
-        vector::push_back(&mut v, 444444440000000);
-        vector::push_back(&mut v, 444444440000000);
-        vector::push_back(&mut v, 444444440000000);
-        vector::push_back(&mut v, 444444440000000);
-        vector::push_back(&mut v, 444444440000000);
-        vector::push_back(&mut v, 400000000000000);
-        vector::push_back(&mut v, 400000000000000);
-        vector::push_back(&mut v, 400000000000000);
-        vector::push_back(&mut v, 400000000000000);
-        vector::push_back(&mut v, 400000000000000);
-        vector::push_back(&mut v, 400000000000000);
-        vector::push_back(&mut v, 400000000000000);
-        vector::push_back(&mut v, 400000000000000);
-        vector::push_back(&mut v, 400000000000000);
-        vector::push_back(&mut v, 400000000000000);
-        vector::push_back(&mut v, 400000000000000);
-        vector::push_back(&mut v, 400000000000000);
-        vector::push_back(&mut v, 400000000000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        vector::push_back(&mut v, 355555560000000);
-        return v
+        vector[
+            2666666_666666666,
+            2666666_666666666,
+            1777777_777777777,
+            1777777_777777777,
+            1688888_888888888,
+            1688888_888888888,
+            1555555_555555555,
+            1555555_555555555,
+            1444444_444444444,
+            1444444_444444444,
+            1333333_333333333,
+            1333333_333333333,
+            1222222_222222222,
+            1222222_222222222,
+            1111111_111111111,
+            1111111_111111111,
+            999999_999999999,
+            999999_999999999,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            777777_777777777,
+            777777_777777777,
+            777777_777777777,
+            777777_777777777,
+            777777_777777777,
+            777777_777777777,
+            777777_777777777,
+            777777_777777777,
+            777777_777777777,
+            777777_777777777,
+            666666_666666666,
+            666666_666666666,
+            666666_666666666,
+            666666_666666666,
+            666666_666666666,
+            666666_666666666,
+            666666_666666666,
+            666666_666666666,
+            666666_666666666,
+            666666_666666666,
+            666666_666666666,
+            666666_666666666,
+            666666_666666666,
+            666666_666666666,
+            666666_666666666,
+            666666_666666666,
+            666666_666666666,
+            666666_666666666,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            444444_444444444,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            399999_999999999,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+            355555_555555555,
+        ]
     }
 
     fun init_lp_emissions(): vector<u64> {
-        let v = vector::empty();
-        vector::push_back(&mut v, 12800000000000000);
-        vector::push_back(&mut v, 8533333330000000);
-        vector::push_back(&mut v, 8106666670000000);
-        vector::push_back(&mut v, 7466666670000000);
-        vector::push_back(&mut v, 6933333330000000);
-        vector::push_back(&mut v, 6400000000000000);
-        vector::push_back(&mut v, 5866666670000000);
-        vector::push_back(&mut v, 5333333330000000);
-        vector::push_back(&mut v, 4800000000000000);
-        vector::push_back(&mut v, 4266666670000000);
-        vector::push_back(&mut v, 4266666670000000);
-        vector::push_back(&mut v, 4266666670000000);
-        vector::push_back(&mut v, 3733333330000000);
-        vector::push_back(&mut v, 3733333330000000);
-        vector::push_back(&mut v, 3733333330000000);
-        vector::push_back(&mut v, 3733333330000000);
-        vector::push_back(&mut v, 3733333330000000);
-        vector::push_back(&mut v, 3200000000000000);
-        vector::push_back(&mut v, 3200000000000000);
-        vector::push_back(&mut v, 3200000000000000);
-        vector::push_back(&mut v, 3200000000000000);
-        vector::push_back(&mut v, 3200000000000000);
-        vector::push_back(&mut v, 3200000000000000);
-        vector::push_back(&mut v, 3200000000000000);
-        vector::push_back(&mut v, 3200000000000000);
-        vector::push_back(&mut v, 3200000000000000);
-        vector::push_back(&mut v, 2133333330000000);
-        vector::push_back(&mut v, 2133333330000000);
-        vector::push_back(&mut v, 2133333330000000);
-        vector::push_back(&mut v, 2133333330000000);
-        vector::push_back(&mut v, 2133333330000000);
-        vector::push_back(&mut v, 2133333330000000);
-        vector::push_back(&mut v, 2133333330000000);
-        vector::push_back(&mut v, 2133333330000000);
-        vector::push_back(&mut v, 2133333330000000);
-        vector::push_back(&mut v, 2133333330000000);
-        vector::push_back(&mut v, 2133333330000000);
-        vector::push_back(&mut v, 2133333330000000);
-        vector::push_back(&mut v, 2133333330000000);
-        vector::push_back(&mut v, 1920000000000000);
-        vector::push_back(&mut v, 1920000000000000);
-        vector::push_back(&mut v, 1920000000000000);
-        vector::push_back(&mut v, 1920000000000000);
-        vector::push_back(&mut v, 1920000000000000);
-        vector::push_back(&mut v, 1920000000000000);
-        vector::push_back(&mut v, 1920000000000000);
-        vector::push_back(&mut v, 1920000000000000);
-        vector::push_back(&mut v, 1920000000000000);
-        vector::push_back(&mut v, 1920000000000000);
-        vector::push_back(&mut v, 1920000000000000);
-        vector::push_back(&mut v, 1920000000000000);
-        vector::push_back(&mut v, 1920000000000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        vector::push_back(&mut v, 1706666670000000);
-        return v
+        vector[
+            6666666_666666666,
+            6666666_666666666,
+            4444444_444444444,
+            4444444_444444444,
+            4222222_222222222,
+            4222222_222222222,
+            3888888_888888888,
+            3888888_888888888,
+            3611111_111111111,
+            3611111_111111111,
+            3333333_333333333,
+            3333333_333333333,
+            3055555_555555555,
+            3055555_555555555,
+            2777777_777777777,
+            2777777_777777777,
+            2500000_000000000,
+            2500000_000000000,
+            2222222_222222222,
+            2222222_222222222,
+            2222222_222222222,
+            2222222_222222222,
+            2222222_222222222,
+            2222222_222222222,
+            1944444_444444444,
+            1944444_444444444,
+            1944444_444444444,
+            1944444_444444444,
+            1944444_444444444,
+            1944444_444444444,
+            1944444_444444444,
+            1944444_444444444,
+            1944444_444444444,
+            1944444_444444444,
+            1666666_666666666,
+            1666666_666666666,
+            1666666_666666666,
+            1666666_666666666,
+            1666666_666666666,
+            1666666_666666666,
+            1666666_666666666,
+            1666666_666666666,
+            1666666_666666666,
+            1666666_666666666,
+            1666666_666666666,
+            1666666_666666666,
+            1666666_666666666,
+            1666666_666666666,
+            1666666_666666666,
+            1666666_666666666,
+            1666666_666666666,
+            1666666_666666666,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            1111111_111111111,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            999999_999999999,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+            888888_888888888,
+        ]
     }
 
     // === Test Functions ===

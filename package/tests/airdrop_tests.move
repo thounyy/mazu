@@ -1,10 +1,8 @@
 #[test_only]
 module mazu_finance::airdrop_tests{
     use std::string;
-    use std::vector;
     use sui::test_scenario::{Self as ts, Scenario};
     use sui::coin::{Self};
-    use sui::transfer;
 
     use mazu_finance::airdrop::{Self, Airdrop, Ticket};
     use mazu_finance::mazu::{Self, Vault};
@@ -14,14 +12,14 @@ module mazu_finance::airdrop_tests{
     const ALICE: address = @0xCAFE;
     const BOB: address = @0xFACE;
 
-    struct Storage {
+    public struct Storage {
         vault: Vault,
         airdrop: Airdrop,
         multisig: Multisig,
     }
 
     fun init_scenario(): (Scenario, Storage) {
-        let scenario = ts::begin(OWNER);
+        let mut scenario = ts::begin(OWNER);
         let scen = &mut scenario;
 
         // initialize modules
@@ -86,13 +84,13 @@ module mazu_finance::airdrop_tests{
 
     #[test]
     fun airdrop_normal() {
-        let (scenario, storage) = init_scenario();
+        let (mut scenario, mut storage) = init_scenario();
         airdrop(&mut scenario, &mut storage, 1);
-        let storage = forward_scenario(&mut scenario, storage, OWNER);
+        let mut storage = forward_scenario(&mut scenario, storage, OWNER);
 
         let alice_ticket = ts::take_from_address<Ticket>(&scenario, ALICE);
         let alice_mazu = airdrop::claim(alice_ticket, &mut storage.airdrop, &mut storage.vault, ts::ctx(&mut scenario));
-        let storage = forward_scenario(&mut scenario, storage, ALICE);
+        let mut storage = forward_scenario(&mut scenario, storage, ALICE);
         assert!(coin::value(&alice_mazu) == 1, 0);
 
         let bob_ticket = ts::take_from_address<Ticket>(&scenario, BOB);
@@ -107,19 +105,19 @@ module mazu_finance::airdrop_tests{
 
     #[test]
     fun claim_more_than_supply() {
-        let (scenario, storage) = init_scenario();
-        airdrop(&mut scenario, &mut storage, 8_888_888_888_888_889);
-        let storage = forward_scenario(&mut scenario, storage, OWNER);
+        let (mut scenario, mut storage) = init_scenario();
+        airdrop(&mut scenario, &mut storage, 4_444_444_444_444_445);
+        let mut storage = forward_scenario(&mut scenario, storage, OWNER);
 
         let alice_ticket = ts::take_from_address<Ticket>(&scenario, ALICE);
         let alice_mazu = airdrop::claim(alice_ticket, &mut storage.airdrop, &mut storage.vault, ts::ctx(&mut scenario));
-        let storage = forward_scenario(&mut scenario, storage, ALICE);
-        assert!(coin::value(&alice_mazu) == 8_888_888_888_888_889, 0);
+        let mut storage = forward_scenario(&mut scenario, storage, ALICE);
+        assert!(coin::value(&alice_mazu) == 4_444_444_444_444_445, 0);
 
         let bob_ticket = ts::take_from_address<Ticket>(&scenario, BOB);
         let bob_mazu = airdrop::claim(bob_ticket, &mut storage.airdrop, &mut storage.vault, ts::ctx(&mut scenario));
         let storage = forward_scenario(&mut scenario, storage, BOB);
-        assert!(coin::value(&bob_mazu) == 8_888_888_888_888_887, 0);
+        assert!(coin::value(&bob_mazu) == 4_444_444_444_444_443, 0);
 
         transfer::public_transfer(alice_mazu, ALICE);
         transfer::public_transfer(bob_mazu, BOB);
@@ -129,14 +127,14 @@ module mazu_finance::airdrop_tests{
     #[test]
     #[expected_failure(abort_code = mazu_finance::airdrop::ENoMoreCoinsToClaim)]
     fun claim_too_much() {
-        let (scenario, storage) = init_scenario();
-        airdrop(&mut scenario, &mut storage, 8_888_888_888_888_888 * 2);
-        let storage = forward_scenario(&mut scenario, storage, OWNER);
+        let (mut scenario, mut storage) = init_scenario();
+        airdrop(&mut scenario, &mut storage, 8_888_888_888_888_888);
+        let mut storage = forward_scenario(&mut scenario, storage, OWNER);
 
         let alice_ticket = ts::take_from_address<Ticket>(&scenario, ALICE);
         let alice_mazu = airdrop::claim(alice_ticket, &mut storage.airdrop, &mut storage.vault, ts::ctx(&mut scenario));
-        let storage = forward_scenario(&mut scenario, storage, ALICE);
-        assert!(coin::value(&alice_mazu) == 8_888_888_888_888_888 * 2, 0);
+        let mut storage = forward_scenario(&mut scenario, storage, ALICE);
+        assert!(coin::value(&alice_mazu) == 8_888_888_888_888_888, 0);
 
         let bob_ticket = ts::take_from_address<Ticket>(&scenario, BOB);
         let bob_mazu = airdrop::claim(bob_ticket, &mut storage.airdrop, &mut storage.vault, ts::ctx(&mut scenario));
