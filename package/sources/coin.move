@@ -1,7 +1,7 @@
 module mazu_finance::mazu {
     use std::string::{Self, String};
     use sui::coin::{Self, Coin, TreasuryCap, CoinMetadata};
-    use sui::balance::Supply;
+    use sui::dynamic_object_field as dof;
     use sui::url;
 
     use mazu_finance::multisig::{Self, Multisig, Proposal};
@@ -11,13 +11,15 @@ module mazu_finance::mazu {
 
     // const MAX_SUPPLY: u64 = 888_888_888__888_888_888; // 100%
     // const TOTAL_COMMUNITY_INCENTIVES: u64 = 444_444_444__444_444_444; // 50%
-    const MAX_COMMUNITY_INCENTIVES: u64 = 124_444_444__444_444_444 + 94 + 90; // 14% (+ rest from staking)
+    const MAX_COMMUNITY_INCENTIVES: u64 = 124_444_444__444_444_444; // 14%
     
     const MAX_TEAM: u64 = 106_666_666__666_666_667; // 12%
     const MAX_STRATEGY: u64 = 128_000_000__000_000_000; // 14.4%
     const MAX_PRIVATE_SALE: u64 = 75_822_222__222_222_222; // 8.53%
     const MAX_PUBLIC_SALE: u64 = 133_333_333__333_333_333; // 15%
-    const BURN_AMOUNT: u64 = 6_222_222__222_222_222; // 0.07%
+
+    const POOL_INIT: u64 = 94 + 90; // rest from staking, used to init the LP
+    const BURN_AMOUNT: u64 = 622_222__222_222_223; // 0.07%
     const URL: vector<u8> = b"https://i.ibb.co/7KgZBFW/mazu-logo.png";
 
     // === Errors ===
@@ -42,15 +44,17 @@ module mazu_finance::mazu {
         icon_url: String,
     }
 
+    public struct TreasuryKey() has copy, drop, store;
+
     public struct Vault has key {
         id: UID,
-        cap: TreasuryCap<MAZU>,
         start: u64, // start epoch
         community: u64,
         team: u64,
         strategy: u64,
         private_sale: u64,
         public_sale: u64,
+        // DOF: TreasuryCap<MAZU>
     }
 
     #[allow(lint(share_owned))]
@@ -69,12 +73,15 @@ module mazu_finance::mazu {
         );
 
         cap.mint_and_transfer(BURN_AMOUNT, @0x0, ctx);
+        cap.mint_and_transfer(POOL_INIT, ctx.sender(), ctx);
 
         transfer::public_share_object(metadata);
         
+        let mut id = object::new(ctx);
+        dof::add(&mut id, TreasuryKey(), cap);
+
         transfer::share_object(Vault {
-            id: object::new(ctx),
-            cap,
+            id,
             start: tx_context::epoch(ctx),
             community: MAX_COMMUNITY_INCENTIVES,
             team: MAX_TEAM,
@@ -90,7 +97,8 @@ module mazu_finance::mazu {
         vault: &mut Vault, 
         coin: Coin<MAZU>
     ) {
-        coin::burn(&mut vault.cap, coin);
+        let cap = dof::borrow_mut(&mut vault.id, TreasuryKey());
+        coin::burn(cap, coin);
     }
 
     // === Multisig functions ===
@@ -126,7 +134,8 @@ module mazu_finance::mazu {
         let TransferRequest { stakeholder, amount, recipient } = request;
         handle_stakeholder(vault, stakeholder, amount, ctx);
 
-        let coin = coin::mint<MAZU>(&mut vault.cap, amount, ctx);
+        let cap = dof::borrow_mut(&mut vault.id, TreasuryKey());
+        let coin = coin::mint<MAZU>(cap, amount, ctx);
         transfer::public_transfer(coin, recipient);
     }
 
@@ -159,21 +168,18 @@ module mazu_finance::mazu {
         request: UpdateMetadataRequest
     ) {
         let UpdateMetadataRequest { name, symbol, description, icon_url } = request;
+        let cap = dof::borrow(&vault.id, TreasuryKey());
 
-        coin::update_name(&vault.cap, metadata, name);
-        coin::update_symbol(&vault.cap, metadata, string::to_ascii(symbol));
-        coin::update_description(&vault.cap, metadata, description);
-        coin::update_icon_url(&vault.cap, metadata, string::to_ascii(icon_url));
+        coin::update_name(cap, metadata, name);
+        coin::update_symbol(cap, metadata, string::to_ascii(symbol));
+        coin::update_description(cap, metadata, description);
+        coin::update_icon_url(cap, metadata, string::to_ascii(icon_url));
     }
 
-    // === Friend functions ===    
+    // === Package functions ===    
     
     public(package) fun cap_mut(vault: &mut Vault): &mut TreasuryCap<MAZU> {
-        &mut vault.cap
-    }
-    
-    public(package) fun supply_mut(vault: &mut Vault): &mut Supply<MAZU> {
-        coin::supply_mut(&mut vault.cap)
+        dof::borrow_mut(&mut vault.id, TreasuryKey())
     }
 
     public(package) fun handle_stakeholder(

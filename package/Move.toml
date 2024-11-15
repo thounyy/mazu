@@ -5,7 +5,7 @@ edition = "2024.beta"
 
 [dependencies]
 Sui = { override = true, git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
-AftermathAmmLpCreation = { local = "./deps/aftermath" }
+AftermathAmmInterface = { git = "https://github.com/AftermathFinance/move-interfaces.git", subdir = "packages/amm/amm-interface", rev = "main" }
 
 [addresses]
 mazu_finance = "0x0"

@@ -6,7 +6,7 @@ module mazu_finance::staking_tests{
     use sui::coin::{Self, Coin};
     use sui::sui::SUI;
 
-    use mazu_sui_lp_coin::af_lp::AF_LP;
+    use mazu_finance::af_lp::AF_LP;
     use mazu_finance::staking::{Self, Staking};
     use mazu_finance::mazu::{Self, Vault, MAZU};
     use mazu_finance::multisig::{Self, Multisig};
@@ -90,9 +90,6 @@ module mazu_finance::staking_tests{
     }
 
     fun compute_reward_index(reward_index: u128, duration: u64, total: u64): u128 {        
-        std::debug::print(&((2666666_666666666 as u128) * 
-            (duration as u128) / 
-            (MS_IN_WEEK as u128)));
         reward_index + (
             (2666666_666666666 as u128) * 
             (duration as u128) / 

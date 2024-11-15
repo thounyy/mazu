@@ -118,7 +118,7 @@ module mazu_finance::vesting {
             transfer::transfer(
                 Locked { 
                     id: object::new(ctx), 
-                    balance: balance::increase_supply(mazu::supply_mut(vault), amount), 
+                    balance: balance::increase_supply(vault.cap_mut().supply_mut(), amount), 
                     allocation: amount,
                     start, 
                     end 

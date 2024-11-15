@@ -9,12 +9,13 @@ module mazu_finance::mazu_tests{
     use mazu_finance::mazu::{Self, Vault, MAZU};    
     use mazu_finance::multisig::{Self, Multisig};
 
-    const MAX_COMMUNITY_INCENTIVES: u64 = 124_444_444__444_444_444 + 90 + 94; // 14%
+    const MAX_COMMUNITY_INCENTIVES: u64 = 124_444_444__444_444_444; // 14%
     // const MAX_TEAM: u64 = 106_666_666__666_666_667; // 12%
     const MAX_STRATEGY: u64 = 128_000_000__000_000_000; // 14.4%
     // const MAX_PRIVATE_SALE: u64 = 75_822_222__222_222_222; // 8.53%
     const MAX_PUBLIC_SALE: u64 = 133_333_333__333_333_333; // 15%
-    const BURN_AMOUNT: u64 = 6_222_222__222_222_222; // 0.07%  
+    const BURN_AMOUNT: u64 = 622_222__222_222_223; // 0.07%  
+    const POOL_INIT: u64 = 94 + 90; // rest from staking used to init the LP
     
     const OWNER: address = @0xBABE;
     const COMMUNITY: address = @0x1;
@@ -128,6 +129,10 @@ module mazu_finance::mazu_tests{
         let coin = scenario.take_from_address<Coin<MAZU>>(@0x0);
         assert!(coin::value(&coin) == BURN_AMOUNT, 0);
         ts::return_to_address(@0x0, coin);
+
+        let coin = scenario.take_from_address<Coin<MAZU>>(OWNER);
+        assert!(coin::value(&coin) == POOL_INIT, 0);
+        ts::return_to_address(OWNER, coin);
 
         complete_scenario(scenario, storage);
     }

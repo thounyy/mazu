@@ -5,8 +5,9 @@ module mazu_finance::staking {
     use sui::dynamic_field as df;
     use sui::clock::{Self, Clock};
 
-    use mazu_sui_lp_coin::af_lp::AF_LP;
+    // use mazu_sui_lp_coin::af_lp::AF_LP;
 
+    use mazu_finance::af_lp::AF_LP;
     use mazu_finance::math;
     use mazu_finance::mazu::{Self, MAZU, Vault};
     use mazu_finance::multisig::{Self, Multisig, Proposal};
@@ -237,8 +238,7 @@ module mazu_finance::staking {
         start: u64,
     ) {
         if (pool.total_value == 0) return;
-        std::debug::print(&b"get_emitted".to_string());
-        std::debug::print(&get_emitted(pool, start, now));
+        
         let claimable_reward_index = 
             (get_emitted(pool, start, now) as u128) * 
             (MUL as u128) / 
