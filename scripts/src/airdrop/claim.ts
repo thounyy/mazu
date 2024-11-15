@@ -1,18 +1,19 @@
-import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { Transaction } from '@mysten/sui/transactions';
 import { client, keypair, getId } from '../utils.js';
 
 (async () => {
 	try {
 		console.log("calling...")
 
-		const tx = new TransactionBlock();
+		const tx = new Transaction();
 
 		const packageId = getId("package_id");
+		console.log(getId("airdrop::Airdrop"))
 
 		const [mazu] = tx.moveCall({
 			target: `${packageId}::airdrop::claim`,
 			arguments: [
-				tx.object("0xddcccba581ec5ba81281fac61b25a33534fb4cd375cfdd0bdcee2a0fa9723eac"), 
+				tx.object("0x31fee16e00a6b176e454b0c6281dccff10479abc3d962232745fd7474a6159b7"), 
 				tx.object(getId("airdrop::Airdrop")), 
 				tx.object(getId("mazu::Vault")),
 			],
@@ -22,9 +23,9 @@ import { client, keypair, getId } from '../utils.js';
 
 		tx.setGasBudget(10000000);
 
-		const result = await client.signAndExecuteTransactionBlock({
+		const result = await client.signAndExecuteTransaction({
 			signer: keypair,
-			transactionBlock: tx,
+			transaction: tx,
 			options: {
 				showObjectChanges: true,
 				showEffects: true,

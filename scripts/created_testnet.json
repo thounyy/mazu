@@ -1,0 +1,38 @@
+[
+  {
+    "type": "multisig::Multisig",
+    "id": "0x03e8f2fa0065389ed2f3173ddbd36258e09842df9da660b409da8b6928f1677e"
+  },
+  {
+    "type": "package_id",
+    "id": "0x380159f988c88b97659b0dfcb393dd9f1693c852f0057f12b0fa128e88b79c91"
+  },
+  {
+    "type": "coin::CoinMetadata<0x380159f988c88b97659b0dfcb393dd9f1693c852f0057f12b0fa128e88b79c91::mazu::MAZU>",
+    "id": "0x3945c5561c2f8eb4d96eb79f635464da24b9e673ab2fb0cffa5a77f2c66c03e4"
+  },
+  {
+    "type": "mazu::Vault",
+    "id": "0x5764fa0d113b8c47467f1c51de084ebcb336d7d6a2b97036b32f19da6ddecd09"
+  },
+  {
+    "type": "dynamic_field::Field<0x380159f988c88b97659b0dfcb393dd9f1693c852f0057f12b0fa128e88b79c91::staking::PoolKey<0x380159f988c88b97659b0dfcb393dd9f1693c852f0057f12b0fa128e88b79c91::mazu::MAZU>, 0x380159f988c88b97659b0dfcb393dd9f1693c852f0057f12b0fa128e88b79c91::staking::Pool>",
+    "id": "0x663d9ca4f811406bb5327d838549fbe171e2f1d68f01fb254c87020c9b1cd3e8"
+  },
+  {
+    "type": "package::UpgradeCap",
+    "id": "0xa7737662dc456d2326dccbaba1672103d5d4507ae4a35d6be960aca6654c45c9"
+  },
+  {
+    "type": "airdrop::Airdrop",
+    "id": "0xc5f215f465e4d6afcfb9a1a93a2add40f15654707a2e3e1c2f324d1f030bc628"
+  },
+  {
+    "type": "staking::Staking",
+    "id": "0xc72980f9fcff5f7f19bffeaf3e8eacdec691c0ab77b306fb0b44b8420d084420"
+  },
+  {
+    "type": "coin::Coin<0x380159f988c88b97659b0dfcb393dd9f1693c852f0057f12b0fa128e88b79c91::mazu::MAZU>",
+    "id": "0xec4fe44d3f74af902b2dc6abadadd68dfa106d5f63e9da3e963a24955b205a44"
+  }
+]

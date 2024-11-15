@@ -1,4 +1,4 @@
-import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { Transaction } from '@mysten/sui/transactions';
 import { client, keypair, getId } from '../utils.js';
 
 
@@ -7,7 +7,7 @@ import { client, keypair, getId } from '../utils.js';
 	try {
 		console.log("calling...")
 
-		const tx = new TransactionBlock();
+		const tx = new Transaction();
 
 		const packageId = getId("package_id");
 
@@ -15,11 +15,11 @@ import { client, keypair, getId } from '../utils.js';
 			target: `${packageId}::mazu::propose_update_metadata`,
 			arguments: [
 				tx.object(getId("multisig::Multisig")), 
-				tx.pure("metadata"), // proposal name / human-readable id
-				tx.pure("New name"),
-				tx.pure("New symbol"),
-				tx.pure("New description"),
-				tx.pure("New icon url"),
+				tx.pure.string("metadata"), // proposal name / human-readable id
+				tx.pure.string("New name"),
+				tx.pure.string("New symbol"),
+				tx.pure.string("New description"),
+				tx.pure.string("New icon url"),
 			]
 		});
 
@@ -27,7 +27,7 @@ import { client, keypair, getId } from '../utils.js';
 			target: `${packageId}::multisig::approve_proposal`,
 			arguments: [
 				tx.object(getId("multisig::Multisig")), 
-				tx.pure("metadata")
+				tx.pure.string("metadata")
 			]
 		});
 
@@ -35,7 +35,7 @@ import { client, keypair, getId } from '../utils.js';
 			target: `${packageId}::multisig::execute_proposal`,
 			arguments: [
 				tx.object(getId("multisig::Multisig")), 
-				tx.pure("metadata")
+				tx.pure.string("metadata")
 			]
 		});
 
@@ -57,9 +57,9 @@ import { client, keypair, getId } from '../utils.js';
 
 		tx.setGasBudget(10000000);
 
-		const result = await client.signAndExecuteTransactionBlock({
+		const result = await client.signAndExecuteTransaction({
 			signer: keypair,
-			transactionBlock: tx,
+			transaction: tx,
 			options: {
 				showObjectChanges: true,
 				showEffects: true,

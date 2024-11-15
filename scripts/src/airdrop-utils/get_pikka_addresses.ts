@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import { createObjectCsvWriter } from 'csv-writer';
-import { getFullnodeUrl, SuiClient, SuiTransactionBlockResponse } from '@mysten/sui.js/client';
+import { getFullnodeUrl, SuiClient, SuiTransactionBlockResponse } from '@mysten/sui/client';
 
 export const client = new SuiClient({ url: "https://rpc-mainnet.suiscan.xyz" });
 

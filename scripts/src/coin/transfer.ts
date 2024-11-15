@@ -1,4 +1,4 @@
-import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { Transaction } from '@mysten/sui/transactions';
 import { client, keypair, getId } from '../utils.js';
 
 
@@ -7,7 +7,7 @@ import { client, keypair, getId } from '../utils.js';
 	try {
 		console.log("calling...")
 
-		const tx = new TransactionBlock();
+		const tx = new Transaction();
 
 		const packageId = getId("package_id");
 
@@ -15,10 +15,10 @@ import { client, keypair, getId } from '../utils.js';
 			target: `${packageId}::mazu::propose_transfer`,
 			arguments: [
 				tx.object(getId("multisig::Multisig")), 
-				tx.pure("transfer"), // proposal name / human-readable id
-				tx.pure("community"), // stakeholder name (Vault fields)
-				tx.pure(10), // amount
-				tx.pure("0x67fa77f2640ca7e0141648bf008e13945263efad6dc429303ad49c740e2084a9"), // recipient
+				tx.pure.string("transfer"), // proposal name / human-readable id
+				tx.pure.string("public_sale"), // stakeholder name (Vault fields)
+				tx.pure.u64(133_333_333_333_333_333), // amount
+				tx.pure.address("0x1637a9f83c62d24f4d4e299ad492e2032fa1e17bcc4086796175e72b9b8d2666"), // recipient
 			]
 		});
 
@@ -26,7 +26,7 @@ import { client, keypair, getId } from '../utils.js';
 			target: `${packageId}::multisig::approve_proposal`,
 			arguments: [
 				tx.object(getId("multisig::Multisig")), 
-				tx.pure("transfer")
+				tx.pure.string("transfer")
 			]
 		});
 
@@ -34,7 +34,7 @@ import { client, keypair, getId } from '../utils.js';
 			target: `${packageId}::multisig::execute_proposal`,
 			arguments: [
 				tx.object(getId("multisig::Multisig")), 
-				tx.pure("transfer")
+				tx.pure.string("transfer")
 			]
 		});
 
@@ -55,9 +55,9 @@ import { client, keypair, getId } from '../utils.js';
 
 		tx.setGasBudget(10000000);
 
-		const result = await client.signAndExecuteTransactionBlock({
+		const result = await client.signAndExecuteTransaction({
 			signer: keypair,
-			transactionBlock: tx,
+			transaction: tx,
 			options: {
 				showObjectChanges: true,
 				showEffects: true,

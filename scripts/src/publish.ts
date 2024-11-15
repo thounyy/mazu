@@ -1,10 +1,11 @@
-import { TransactionBlock } from '@mysten/sui.js/transactions';
-import { OwnedObjectRef } from '@mysten/sui.js/client';
+import { Transaction } from '@mysten/sui/transactions';
+import { OwnedObjectRef } from '@mysten/sui/client';
 import * as fs from "fs";
 import { client, keypair, IObjectInfo, getId } from './utils.js';
 
 (async () => {
 	console.log("building package...")
+	console.log(keypair.toSuiAddress());
 	
 	const { execSync } = require('child_process');
 	const { modules, dependencies } = JSON.parse(
@@ -16,13 +17,13 @@ import { client, keypair, IObjectInfo, getId } from './utils.js';
 	console.log("publishing...")
 
 	try {		
-		const tx = new TransactionBlock();
+		const tx = new Transaction();
 		const [upgradeCap] = tx.publish({ modules,dependencies });
 		tx.transferObjects([upgradeCap], keypair.getPublicKey().toSuiAddress());
 		
-		const result = await client.signAndExecuteTransactionBlock({
+		const result = await client.signAndExecuteTransaction({
 			signer: keypair,
-			transactionBlock: tx,
+			transaction: tx,
 			options: {
 				showEffects: true,
 			},
@@ -68,7 +69,7 @@ import { client, keypair, IObjectInfo, getId } from './utils.js';
             }
         });
 
-		fs.writeFileSync('./created.json', JSON.stringify(objects, null, 2));
+		fs.writeFileSync('./created_mainnet.json', JSON.stringify(objects, null, 2));
 		
 	} catch (e) {
 		console.log(e);

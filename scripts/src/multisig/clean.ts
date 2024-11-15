@@ -1,4 +1,4 @@
-import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { Transaction } from '@mysten/sui/transactions';
 import { client, keypair, getId } from '../utils.js';
 
 
@@ -9,7 +9,7 @@ import { client, keypair, getId } from '../utils.js';
 	try {
 		console.log("calling...")
 
-		const tx = new TransactionBlock();
+		const tx = new Transaction();
 
 		const packageId = getId("package_id");
 
@@ -22,9 +22,9 @@ import { client, keypair, getId } from '../utils.js';
 
 		tx.setGasBudget(10000000);
 
-		const result = await client.signAndExecuteTransactionBlock({
+		const result = await client.signAndExecuteTransaction({
 			signer: keypair,
-			transactionBlock: tx,
+			transaction: tx,
 			options: {
 				showObjectChanges: true,
 				showEffects: true,

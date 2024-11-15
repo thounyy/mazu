@@ -1,11 +1,11 @@
-import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { Transaction } from '@mysten/sui/transactions';
 import { client, keypair, getId } from '../utils.js';
 
 (async () => {
 	try {
 		console.log("calling...")
 
-		const tx = new TransactionBlock();
+		const tx = new Transaction();
 
 		const packageId = getId("package_id");
 
@@ -14,7 +14,7 @@ import { client, keypair, getId } from '../utils.js';
 			arguments: [
 				tx.object(getId("mazu::Vault")), 
 				tx.object(getId("staking::Staking")), 
-				tx.pure("0x38bc44e3d097a599acdfd14875a2a1783503ddf07f63f88c30e770c93ed6ca75"), // the Staked object
+				tx.object("0x38bc44e3d097a599acdfd14875a2a1783503ddf07f63f88c30e770c93ed6ca75"), // the Staked object
 				tx.object("0x0000000000000000000000000000000000000000000000000000000000000006"),
 			],
 			typeArguments: [
@@ -26,9 +26,9 @@ import { client, keypair, getId } from '../utils.js';
 
 		tx.setGasBudget(10000000);
 
-		const result = await client.signAndExecuteTransactionBlock({
+		const result = await client.signAndExecuteTransaction({
 			signer: keypair,
-			transactionBlock: tx,
+			transaction: tx,
 			options: {
 				showObjectChanges: true,
 				showEffects: true,

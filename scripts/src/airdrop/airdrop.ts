@@ -1,4 +1,4 @@
-import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { Transaction } from '@mysten/sui/transactions';
 import { client, keypair, getId } from '../utils.js';
 
 async function loadAirdrops() {
@@ -34,13 +34,13 @@ async function loadAirdrops() {
 		console.log(airdrops)
 
 		while (airdrops.length > 0) {
-			const tx = new TransactionBlock();
+			const tx = new Transaction();
 
 			tx.moveCall({
 				target: `${packageId}::airdrop::propose`,
 				arguments: [
 					tx.object(getId("multisig::Multisig")), 
-					tx.pure("airdrop")
+					tx.pure.string("airdrop")
 				]
 			});
 
@@ -48,7 +48,7 @@ async function loadAirdrops() {
 				target: `${packageId}::multisig::approve_proposal`,
 				arguments: [
 					tx.object(getId("multisig::Multisig")), 
-					tx.pure("airdrop")
+					tx.pure.string("airdrop")
 				]
 			});
 
@@ -56,7 +56,7 @@ async function loadAirdrops() {
 				target: `${packageId}::multisig::execute_proposal`,
 				arguments: [
 					tx.object(getId("multisig::Multisig")), 
-					tx.pure("airdrop")
+					tx.pure.string("airdrop")
 				]
 			});
 
@@ -67,18 +67,18 @@ async function loadAirdrops() {
 				]
 			});
 
-			const drops = airdrops.splice(-100);
-			for (let i = 0; i < drops.length; i++) {
-				const drop = drops.pop();
+			const drops = airdrops.splice(0, 500);
+
+			drops.forEach(drop => {
 				tx.moveCall({
 					target: `${packageId}::airdrop::drop`,
 					arguments: [
 						tx.object(request),
-						tx.pure(Number(drop?.amount)),
-						tx.pure(drop?.user)
+						tx.pure.u64(drop.amount),
+						tx.pure.address(drop.user)
 					]
 				});
-			}
+			});
 
 			tx.moveCall({
 				target: `${packageId}::airdrop::complete`,
@@ -89,15 +89,17 @@ async function loadAirdrops() {
 
 			tx.setGasBudget(5000000000);
 
-			const result = await client.signAndExecuteTransactionBlock({
+			const result = await client.signAndExecuteTransaction({
 				signer: keypair,
-				transactionBlock: tx,
+				transaction: tx,
 				options: {
 					showObjectChanges: true,
 					showEffects: true,
 				},
 				requestType: "WaitForLocalExecution"
 			});
+
+			await new Promise(resolve => setTimeout(resolve, 1000));
 
 			console.log("result: ", JSON.stringify(result.objectChanges, null, 2));
 			console.log("status: ", JSON.stringify(result.effects?.status, null, 2));

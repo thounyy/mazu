@@ -1,4 +1,4 @@
-import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { Transaction } from '@mysten/sui/transactions';
 import { client, keypair, getId } from '../utils.js';
 
 
@@ -9,7 +9,7 @@ import { client, keypair, getId } from '../utils.js';
 	try {
 		console.log("calling...")
 
-		const tx = new TransactionBlock();
+		const tx = new Transaction();
 
 		const packageId = getId("package_id");
 
@@ -17,10 +17,10 @@ import { client, keypair, getId } from '../utils.js';
 			target: `${packageId}::multisig::propose_modify`,
 			arguments: [
 				tx.object(getId("multisig::Multisig")), 
-				tx.pure("add_members_increase_threshold"), // proposal name / human-readable id
-				tx.pure(true), // is it to add members (false if remove)
-				tx.pure(1), // new threshold, can be the same as before
-				tx.pure([
+				tx.pure.string("add_members_increase_threshold"), // proposal name / human-readable id
+				tx.pure.bool(true), // is it to add members (false if remove)
+				tx.pure.u64(1), // new threshold, can be the same as before
+				tx.pure.vector("address", [
 					"0xb2b1148d2ee50063e292551956a906764762f8e1786083dc0adaf203a6e64bda",
 					"0x244d0dd19b90b0ded063d5543b5e4b83b4e3b1ae1b8993e0f11abbd7ae77ad6b"
 				]), // addresses to add or remove
@@ -29,9 +29,9 @@ import { client, keypair, getId } from '../utils.js';
 
 		tx.setGasBudget(10000000);
 
-		const result = await client.signAndExecuteTransactionBlock({
+		const result = await client.signAndExecuteTransaction({
 			signer: keypair,
-			transactionBlock: tx,
+			transaction: tx,
 			options: {
 				showObjectChanges: true,
 				showEffects: true,

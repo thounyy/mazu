@@ -1,11 +1,11 @@
-import { TransactionBlock } from '@mysten/sui.js/transactions';
+import { Transaction } from '@mysten/sui/transactions';
 import { client, keypair, getId } from './utils.js';
 
 (async () => {
 	try {
 		console.log("calling...")
 
-		const tx = new TransactionBlock();
+		const tx = new Transaction();
 
 		const [coin] = tx.splitCoins(tx.object(
 			"0x483b027d97cc4117530009694452ac0a7b5339daa9cadfa9ce09d54930cb7f15"
@@ -24,9 +24,9 @@ import { client, keypair, getId } from './utils.js';
 
 		tx.setGasBudget(10000000);
 
-		const result = await client.signAndExecuteTransactionBlock({
+		const result = await client.signAndExecuteTransaction({
 			signer: keypair,
-			transactionBlock: tx,
+			transaction: tx,
 			options: {
 				showObjectChanges: true,
 				showEffects: true,
