@@ -69,7 +69,7 @@ import { client, keypair, IObjectInfo, getId } from './utils.js';
             }
         });
 
-		fs.writeFileSync('./created_mainnet.json', JSON.stringify(objects, null, 2));
+		fs.writeFileSync('./created_testnet.json', JSON.stringify(objects, null, 2));
 		
 	} catch (e) {
 		console.log(e);

@@ -2,44 +2,8 @@
 
 [move]
 version = 3
-manifest_digest = "0E5DCA3B15E4D58EE827BD6E5CDDD2108BC799F739A395AEA533106E671487F2"
-deps_digest = "3C4103934B1E040BB6B23F1D610B4EF9F2F1166A50A104EADCF77467C004C600"
-dependencies = [
-  { id = "AftermathAmmInterface", name = "AftermathAmmInterface" },
-  { id = "Sui", name = "Sui" },
-]
-
-[[move.package]]
-id = "AftermathAmm"
-source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev = "main", subdir = "packages/amm/amm" }
-
-dependencies = [
-  { id = "AmmMath", name = "AmmMath" },
-  { id = "ProtocolFeeVault", name = "ProtocolFeeVault" },
-  { id = "Sui", name = "Sui" },
-]
-
-[[move.package]]
-id = "AftermathAmmInterface"
-source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev = "main", subdir = "packages/amm/amm-interface" }
-
-dependencies = [
-  { id = "AftermathAmm", name = "AftermathAmm" },
-  { id = "Sui", name = "Sui" },
-]
-
-[[move.package]]
-id = "AmmMath"
-source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev = "main", subdir = "packages/amm/amm-math" }
-
-dependencies = [
-  { id = "Sui", name = "Sui" },
-]
-
-[[move.package]]
-id = "InsuranceFund"
-source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev = "main", subdir = "packages/amm/amm-insurance-fund" }
-
+manifest_digest = "8BED759561E27BA7C6A3CB1CE635E433E108CE3761D915676F91BD2DFE36CA6C"
+deps_digest = "F8BBB0CCB2491CA29A3DF03D6F92277A4F3574266507ACD77214D37ECA3F3082"
 dependencies = [
   { id = "Sui", name = "Sui" },
 ]
@@ -49,26 +13,6 @@ id = "MoveStdlib"
 source = { git = "https://github.com/MystenLabs/sui.git", rev = "framework/mainnet", subdir = "crates/sui-framework/packages/move-stdlib" }
 
 [[move.package]]
-id = "ProtocolFeeVault"
-source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev = "main", subdir = "packages/amm/amm-protocol-fee-vault" }
-
-dependencies = [
-  { id = "InsuranceFund", name = "InsuranceFund" },
-  { id = "ReferralVault", name = "ReferralVault" },
-  { id = "Sui", name = "Sui" },
-  { id = "Treasury", name = "Treasury" },
-  { id = "utilities", name = "utilities" },
-]
-
-[[move.package]]
-id = "ReferralVault"
-source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev = "main", subdir = "packages/amm/amm-referral-vault" }
-
-dependencies = [
-  { id = "Sui", name = "Sui" },
-]
-
-[[move.package]]
 id = "Sui"
 source = { git = "https://github.com/MystenLabs/sui.git", rev = "framework/mainnet", subdir = "crates/sui-framework/packages/sui-framework" }
 
@@ -76,28 +20,12 @@ dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
 ]
 
-[env]
-
-[[move.package]]
-id = "Treasury"
-source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev = "main", subdir = "packages/amm/amm-treasury" }
-
-dependencies = [
-  { id = "Sui", name = "Sui" },
-]
-
-[[move.package]]
-id = "utilities"
-source = { git = "https://github.com/AftermathFinance/move-interfaces.git", rev = "main", subdir = "packages/utility/utilities" }
-
-dependencies = [
-  { id = "Sui", name = "Sui" },
-]
-
 [move.toolchain-version]
 compiler-version = "1.37.3"
 edition = "2024.beta"
 flavor = "sui"
+
+[env]
 
 [env.mainnet]
 chain-id = "35834a8a"

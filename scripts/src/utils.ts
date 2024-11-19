@@ -10,13 +10,13 @@ export interface IObjectInfo {
 
 dotenv.config();
 
-export const keypair = Ed25519Keypair.fromSecretKey(Uint8Array.from(Buffer.from(process.env.MAINNET_KEY!, "base64")).slice(1));
+export const keypair = Ed25519Keypair.fromSecretKey(Uint8Array.from(Buffer.from(process.env.KEY!, "base64")).slice(1));
 
-export const client = new SuiClient({ url: getFullnodeUrl("mainnet") });
+export const client = new SuiClient({ url: getFullnodeUrl("testnet") });
 
 export const getId = (type: string): string => {
     try {
-        const rawData = fs.readFileSync('./created_mainnet.json', 'utf8');
+        const rawData = fs.readFileSync('./created_testnet.json', 'utf8');
         const parsedData: IObjectInfo[] = JSON.parse(rawData);
         const typeToId = new Map(parsedData.map(item => [item.type, item.id]));
         for (let [key, value] of typeToId) {

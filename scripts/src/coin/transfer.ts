@@ -17,8 +17,8 @@ import { client, keypair, getId } from '../utils.js';
 				tx.object(getId("multisig::Multisig")), 
 				tx.pure.string("transfer"), // proposal name / human-readable id
 				tx.pure.string("public_sale"), // stakeholder name (Vault fields)
-				tx.pure.u64(133_333_333_333_333_333), // amount
-				tx.pure.address("0x1637a9f83c62d24f4d4e299ad492e2032fa1e17bcc4086796175e72b9b8d2666"), // recipient
+				tx.pure.u64(333_333_333_333_333), // amount
+				tx.pure.address("0xdc2dbdf749bcf228a97339020607110baf45248ccc3e7671edd3e3c866a75717"), // recipient
 			]
 		});
 
